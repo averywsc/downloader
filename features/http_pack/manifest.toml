@@ -1,0 +1,6 @@
+[pack]
+entry = "pack.py"
+class = "HttpPack"
+dependencies = []
+version = "1.2.2"
+gdMinVersion = "4.5.0"

@@ -1,0 +1,122 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING
+from urllib.parse import urlparse
+
+from qfluentwidgets import ComboBox, FluentIcon, LineEdit, SettingCard, ToolButton, ToolTipFilter
+
+from .config import AUTO_SITE_KEY, CUSTOM_SITE_KEY, GITHUB_PROXY_SITES, githubConfig
+from .probe import PROBE_TIMEOUT, PROBE_UNAVAILABLE, probeProxyLatencies
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
+SITE_OPTIONS = [AUTO_SITE_KEY, *GITHUB_PROXY_SITES, CUSTOM_SITE_KEY]
+
+
+class GitHubProxySiteCard(SettingCard):
+    def __init__(self, submit: Callable[..., str], parent: QWidget | None = None):
+        self.submit = submit
+        super().__init__(
+            FluentIcon.GLOBE, self.tr('Proxy Site'),
+            self.tr('Select GitHub reverse proxy site; latency is for reference only'), parent,
+        )
+        self._latencies: dict[str, int | None] = {s: None for s in GITHUB_PROXY_SITES}
+        self._isRefreshing = False
+        self.comboBox = ComboBox(self)
+        self.customSiteEdit = LineEdit(self)
+        self.refreshButton = ToolButton(FluentIcon.SYNC, self)
+
+        self._initWidget()
+        self._initLayout()
+        self._bind()
+
+    def _initWidget(self):
+        self.comboBox.setMinimumWidth(260)
+        self.customSiteEdit.setPlaceholderText("https://example.com/")
+        self.customSiteEdit.setClearButtonEnabled(True)
+        self.customSiteEdit.setMinimumWidth(220)
+        self.refreshButton.setToolTip(self.tr('Re-test Latency'))
+        self.refreshButton.installEventFilter(ToolTipFilter(self.refreshButton))
+
+        self.comboBox.addItem(self.tr('auto'))
+        for site in GITHUB_PROXY_SITES:
+            self.comboBox.addItem(urlparse(site).netloc or site.rstrip("/"))
+        self.comboBox.addItem(self.tr('Custom'))
+
+        currentSite = githubConfig.selectedSite.value
+        self.comboBox.setCurrentIndex(SITE_OPTIONS.index(currentSite))
+        self.customSiteEdit.setText(githubConfig.customSite.value)
+        self.customSiteEdit.setVisible(currentSite == CUSTOM_SITE_KEY)
+
+    def _initLayout(self):
+        self.hBoxLayout.addWidget(self.comboBox)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.customSiteEdit)
+        self.hBoxLayout.addSpacing(8)
+        self.hBoxLayout.addWidget(self.refreshButton)
+        self.hBoxLayout.addSpacing(16)
+
+    def _bind(self):
+        self.comboBox.currentIndexChanged.connect(self._onCurrentIndexChanged)
+        self.customSiteEdit.editingFinished.connect(self._onCustomSiteEditingFinished)
+        self.refreshButton.clicked.connect(self.refreshLatencies)
+
+    def _latencyTag(self, latency: int | None) -> str:
+        if latency is None:
+            return ""
+        if latency == PROBE_UNAVAILABLE:
+            return self.tr('Unavailable')
+        if latency == PROBE_TIMEOUT:
+            return self.tr('Timeout')
+        return f"{latency} ms"
+
+    def _refreshLatencyLabels(self):
+        for i, site in enumerate(GITHUB_PROXY_SITES, start=1):
+            displayName = urlparse(site).netloc or site.rstrip("/")
+            tag = self._latencyTag(self._latencies.get(site))
+            label = f"{displayName} ({tag})" if tag else displayName
+            self.comboBox.setItemText(i, label)
+
+        customSite = githubConfig.customSite.value
+        customLatency = self._latencies.get(customSite) if customSite else None
+        tag = self._latencyTag(customLatency)
+        customLabel = f"{self.tr('自定义')} ({tag})" if tag else self.tr('Custom')
+        self.comboBox.setItemText(SITE_OPTIONS.index(CUSTOM_SITE_KEY), customLabel)
+
+    def _onCurrentIndexChanged(self, index: int):
+        from app.config.cfg import cfg
+        if index < 0:
+            return
+        cfg.set(githubConfig.selectedSite, SITE_OPTIONS[index])
+        self.customSiteEdit.setVisible(SITE_OPTIONS[index] == CUSTOM_SITE_KEY)
+
+    def _onCustomSiteEditingFinished(self):
+        from app.config.cfg import cfg
+        cfg.set(githubConfig.customSite, self.customSiteEdit.text().strip())
+
+    def refreshLatencies(self) -> None:
+        if self._isRefreshing:
+            return
+        self._isRefreshing = True
+        self._latencies = {s: None for s in GITHUB_PROXY_SITES}
+        self._refreshLatencyLabels()
+        self.refreshButton.setEnabled(False)
+        self.submit(
+            probeProxyLatencies(),
+            done=self._onLatenciesDone, failed=self._onLatenciesFailed,
+            owner=self,
+        )
+
+    def _onLatenciesDone(self, latencies: dict[str, int]):
+        self._isRefreshing = False
+        self.refreshButton.setEnabled(True)
+        self._latencies.update(latencies)
+        self._refreshLatencyLabels()
+
+    def _onLatenciesFailed(self, error):
+        self._isRefreshing = False
+        self.refreshButton.setEnabled(True)
+
+

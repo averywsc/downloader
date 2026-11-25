@@ -1,0 +1,13 @@
+YEAR = 2026
+AUTHOR = "Avery"
+VERSION = "4.5.11"
+BUILD_VERSION = VERSION.split("-")[0]
+DESKTOP_ID = "com.avery.dodown"
+DESKTOP_OBJECT_PATH = "/" + DESKTOP_ID.replace(".", "/")
+LATEST_EXTENSION_VERSION = "2.3.4"
+AUTHOR_URL = "https://averybeuth.xyz"
+DONATE_URL = "https://buymeacoffee.com/averyuwubaka"
+FEEDBACK_URL = "https://github.com/averywsc/downloader/issues"
+FIREFOX_ADDONS_URL = "https://addons.mozilla.org/firefox/addon/ghost-downloader/"
+EDGE_ADDONS_URL = "https://microsoftedge.microsoft.com/addons/detail/ghost-downloader-browser/odaohmfjjbompdkmfbambadnagplcmce"
+CHROME_WEBSTORE_URL = "https://chromewebstore.google.com/detail/ghost-downloader-for-brow/lagbjgkmaafnlinaeonbhjchnjinjpeh"

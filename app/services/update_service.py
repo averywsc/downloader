@@ -1,0 +1,342 @@
+from __future__ import annotations
+
+import asyncio
+import os
+import shutil
+import subprocess
+import sys
+import tarfile
+import zipfile
+from dataclasses import dataclass, replace
+from enum import auto, IntEnum
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from app.signal import Signal
+from loguru import logger
+
+from app.checksum import parseChecksum, toChecksum
+from app.config.constants import VERSION
+from app.config.paths import APP_DATA_DIR, APP_DIR, EXECUTABLE_DIR, FEATURES_DIR
+from app.platform.android import IS_ANDROID
+from app.platform.arch import BUILD_ARCH, MACHINE_ARCH
+from app.models.pack import PackManifest
+from app.models.task import TaskError, toTaskError
+from app.sources import fetchJson, fetchRawFile, fetchReleaseAsset
+from app.update import APP_REPO, isNewer
+
+if TYPE_CHECKING:
+    from app.services.coroutine_runner import CoroutineRunner
+
+STAGING_DIR = APP_DATA_DIR / "update_staging"
+UPDATER_PATH = EXECUTABLE_DIR / ("updater.exe" if sys.platform == "win32" else "updater")
+
+OS_MAP = {"win32": "Windows", "darwin": "macOS", "linux": "Linux"}
+
+
+def extractZip(archivePath: Path, targetDir: Path) -> None:
+    with zipfile.ZipFile(archivePath) as zf:
+        zf.extractall(targetDir)
+
+
+def extractTarXz(archivePath: Path, targetDir: Path) -> None:
+    with tarfile.open(archivePath, "r:xz") as tf:
+        tf.extractall(targetDir, filter="data")
+
+
+async def extractDmg(dmgPath: Path, targetDir: Path) -> None:
+    mountPoint = dmgPath.parent / "_dmg_mount"
+    if mountPoint.exists():
+        await asyncio.create_subprocess_exec(
+            "hdiutil", "detach", str(mountPoint), "-force", "-quiet",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
+        shutil.rmtree(mountPoint, ignore_errors=True)
+    mountPoint.mkdir(exist_ok=True)
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "hdiutil", "attach", str(dmgPath), "-mountpoint", str(mountPoint),
+            "-nobrowse", "-quiet",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
+        await proc.wait()
+        if proc.returncode != 0:
+            raise RuntimeError(f"hdiutil attach failed ({proc.returncode})")
+
+        apps = [p for p in mountPoint.iterdir() if p.suffix == ".app"]
+        if not apps:
+            raise TaskError('No .app bundle was found in the DMG')
+
+        await asyncio.to_thread(shutil.copytree, apps[0], targetDir, symlinks=True)
+    finally:
+        await asyncio.create_subprocess_exec(
+            "hdiutil", "detach", str(mountPoint), "-force", "-quiet",
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+        )
+        shutil.rmtree(mountPoint, ignore_errors=True)
+
+
+def installPendingPacks(featuresDir: Path) -> None:
+    if not featuresDir.exists():
+        return
+    for pending in featuresDir.glob("*_pending"):
+        packId = pending.name.removesuffix("_pending")
+        target = featuresDir / packId
+        if target.exists():
+            shutil.rmtree(target)
+        pending.rename(target)
+        logger.info("已应用 Pack 更新: {}", packId)
+
+
+class UpdateState(IntEnum):
+    IDLE = auto()
+    CHECKING = auto()
+    AVAILABLE = auto()
+    DOWNLOADING = auto()
+    READY = auto()
+    FAILED = auto()
+
+
+@dataclass(frozen=True)
+class UpdateInfo:
+    targetId: str
+    label: str
+    currentVersion: str
+    latestVersion: str
+    state: UpdateState = UpdateState.IDLE
+    progress: float = 0
+    error: TaskError | None = None
+
+
+class UpdateService:
+    changed = Signal(object)
+
+    def __init__(self, coroutineRunner: CoroutineRunner):
+        self._coroutineRunner = coroutineRunner
+        self._infos: dict[str, UpdateInfo] = {}
+        self._versionsData: dict = {}
+
+    def infoById(self, targetId: str) -> UpdateInfo | None:
+        return self._infos.get(targetId)
+
+    def canSelfUpdate(self) -> bool:
+        if "__compiled__" not in globals() or not UPDATER_PATH.is_file():
+            return False
+        if sys.platform != "linux":
+            return True
+        return (
+            "APPIMAGE" not in os.environ
+            and os.access(APP_DIR, os.W_OK)
+            and os.access(APP_DIR.parent, os.W_OK)
+        )
+
+    def check(self) -> None:
+        self._coroutineRunner.submit(self._check())
+
+    def download(self, targetId: str) -> None:
+        self._coroutineRunner.submit(self._download(targetId))
+
+    def apply(self) -> None:
+        for info in self._infos.values():
+            if info.state == UpdateState.READY and info.targetId != "app":
+                self._applyPack(info.targetId)
+        appInfo = self._infos.get("app")
+        if appInfo is not None and appInfo.state == UpdateState.READY:
+            self._startUpdater()
+
+    # ── Private ──
+
+    async def _check(self) -> None:
+        self._emit("app", UpdateState.CHECKING, label=f"Dodown {VERSION}")
+
+        data = await self._fetchVersions()
+        if data is None:
+            logger.debug("检查更新失败，将在下次启动时重试")
+            self._emit("app", UpdateState.IDLE, error=TaskError('Unable to retrieve version information'))
+            return
+        self._versionsData = data
+
+        appData = data.get("app", {})
+        latestVersion = appData.get("version", "")
+        if latestVersion and isNewer(VERSION, latestVersion):
+            self._emit("app", UpdateState.AVAILABLE,
+                        label=f"Dodown {latestVersion}",
+                        latestVersion=latestVersion)
+        else:
+            self._emit("app", UpdateState.IDLE)
+
+        if IS_ANDROID:
+            return
+
+        packsData = data.get("packs", {})
+        for packDir in sorted(FEATURES_DIR.iterdir()) if FEATURES_DIR.exists() else []:
+            if not packDir.is_dir() or packDir.name.startswith(".") or packDir.name.endswith("_pending"):
+                continue
+            manifest = PackManifest.fromDir(packDir)
+            if manifest is None or not manifest.version:
+                continue
+            remoteInfo = packsData.get(manifest.name)
+            if remoteInfo is None:
+                continue
+            remoteVersion = remoteInfo.get("version", "")
+            if remoteVersion and isNewer(manifest.version, remoteVersion):
+                remoteGdMin = remoteInfo.get("gdMinVersion", "")
+                if remoteGdMin and not isNewer(remoteGdMin, VERSION) and remoteGdMin != VERSION:
+                    logger.debug("跳过 Pack 更新 {}：需要 GD ≥ {}", manifest.name, remoteGdMin)
+                    continue
+                self._emit(manifest.name, UpdateState.AVAILABLE,
+                            label=f"{manifest.className} {remoteVersion}",
+                            currentVersion=manifest.version,
+                            latestVersion=remoteVersion)
+
+    async def _fetchVersions(self) -> dict | None:
+        try:
+            data, _ = await fetchJson(APP_REPO, "main", "versions.json")
+            return data
+        except RuntimeError:
+            return None
+
+    async def _download(self, targetId: str) -> None:
+        info = self._infos.get(targetId)
+        if info is None or info.state != UpdateState.AVAILABLE:
+            return
+
+        self._emit(targetId, UpdateState.DOWNLOADING)
+        STAGING_DIR.mkdir(parents=True, exist_ok=True)
+
+        try:
+            if targetId == "app":
+                await self._downloadApp(info)
+            else:
+                await self._downloadPack(targetId, info)
+        except Exception as e:
+            logger.opt(exception=e).error("下载更新失败: {}", targetId)
+            self._emit(targetId, UpdateState.FAILED, error=toTaskError(e))
+
+    async def _downloadApp(self, info: UpdateInfo) -> None:
+        appData = self._versionsData.get("app", {})
+        version = appData.get("version", "")
+        tag = f"v{version}"
+        platformKey = f"{OS_MAP[sys.platform]}-{MACHINE_ARCH}"
+
+        patches = appData.get("patches", {})
+        patch = patches.get(platformKey)
+
+        if patch and patch.get("from") == VERSION and BUILD_ARCH == MACHINE_ARCH:
+            sha = patch.get("sha256", "")
+            outputPath = STAGING_DIR / "patch.hdiff"
+
+            await fetchReleaseAsset(APP_REPO, tag, patch["file"], outputPath,
+                                    onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
+
+            if not sha or await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(sha):
+                outputPath.unlink(missing_ok=True)
+                self._emit("app", UpdateState.FAILED, error=TaskError('Checksum verification failed'))
+                return
+
+            self._emit("app", UpdateState.READY)
+            return
+
+        full = appData.get("full", {}).get(platformKey)
+        if not full:
+            self._emit("app", UpdateState.FAILED, error=TaskError('No update is available for the current platform'))
+            return
+
+        archivePath = STAGING_DIR / full["file"]
+        sha = full.get("sha256", "")
+
+        await fetchReleaseAsset(APP_REPO, tag, full["file"], archivePath,
+                                onProgress=lambda p: self._emit("app", UpdateState.DOWNLOADING, progress=p))
+
+        if not sha or await toChecksum(archivePath, "sha256", lambda _: None) != parseChecksum(sha):
+            archivePath.unlink(missing_ok=True)
+            self._emit("app", UpdateState.FAILED, error=TaskError('Checksum verification failed'))
+            return
+
+        newDir = STAGING_DIR / "app_new"
+        if newDir.exists():
+            await asyncio.to_thread(shutil.rmtree, newDir)
+
+        if sys.platform == "darwin":
+            await extractDmg(archivePath, newDir)
+        elif archivePath.suffix == ".xz":
+            await asyncio.to_thread(extractTarXz, archivePath, newDir)
+        else:
+            await asyncio.to_thread(extractZip, archivePath, newDir)
+
+        archivePath.unlink(missing_ok=True)
+        self._emit("app", UpdateState.READY)
+
+    async def _downloadPack(self, packId: str, info: UpdateInfo) -> None:
+        packData = self._versionsData.get("packs", {}).get(packId, {})
+        filename = packData.get("file", f"{packId}.zip")
+        outputPath = STAGING_DIR / f"{packId}.zip"
+
+        await fetchRawFile(APP_REPO, "main", f"dist/packs/{filename}", outputPath,
+                           onProgress=lambda p: self._emit(packId, UpdateState.DOWNLOADING, progress=p))
+
+        expectedSha = packData.get("sha256", "")
+        if not expectedSha or await toChecksum(outputPath, "sha256", lambda _: None) != parseChecksum(expectedSha):
+            outputPath.unlink(missing_ok=True)
+            self._emit(packId, UpdateState.FAILED, error=TaskError('Checksum verification failed'))
+            return
+
+        self._emit(packId, UpdateState.READY)
+
+    def _applyPack(self, packId: str) -> None:
+        zipPath = STAGING_DIR / f"{packId}.zip"
+        if not zipPath.is_file():
+            return
+        pendingDir = FEATURES_DIR / f"{packId}_pending"
+        pendingDir.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(zipPath) as zf:
+            zf.extractall(pendingDir)
+        zipPath.unlink()
+        logger.info("Pack 更新已暂存: {}", packId)
+
+    def _startUpdater(self) -> None:
+        if not UPDATER_PATH.is_file():
+            logger.error("updater not found: {}", UPDATER_PATH)
+            return
+
+        patchPath = STAGING_DIR / "patch.hdiff"
+        stagingNewDir = STAGING_DIR / "app_new"
+
+        args = [str(UPDATER_PATH), str(os.getpid()), str(APP_DIR),
+                str(Path(sys.executable).resolve())]
+        if patchPath.is_file():
+            args.append(str(patchPath))
+        elif stagingNewDir.is_dir():
+            args.append(str(stagingNewDir))
+        else:
+            logger.error("no patch or newDir found for update")
+            return
+
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            kwargs["start_new_session"] = True
+
+        subprocess.Popen(args, **kwargs)
+        logger.info("updater started")
+
+    def _emit(self, targetId: str, state: UpdateState, **kwargs) -> None:
+        current = self._infos.get(targetId)
+        if current is None:
+            info = UpdateInfo(
+                targetId=targetId,
+                label=kwargs.get("label", targetId),
+                currentVersion=kwargs.get("currentVersion", VERSION if targetId == "app" else ""),
+                latestVersion=kwargs.get("latestVersion", ""),
+                state=state,
+                progress=kwargs.get("progress", 0),
+                error=kwargs.get("error"),
+            )
+        else:
+            info = replace(current, state=state, **{
+                k: v for k, v in kwargs.items()
+                if k in ("label", "currentVersion", "latestVersion", "progress", "error")
+            })
+        self._infos[targetId] = info
+        self._coroutineRunner.post(self.changed.emit, info)

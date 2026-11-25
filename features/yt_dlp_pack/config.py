@@ -1,0 +1,298 @@
+from __future__ import annotations
+
+import ast
+import sys
+from collections.abc import Callable
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from app.config.cfg import BoolValidator, ConfigItem
+from app.i18n import N
+
+from app.config.serializers import PathSerializer
+from app.config.paths import APP_DATA_DIR
+from app.models.pack import BinaryRuntime, PackConfig, VersionInfo
+from app.platform.android import IS_ANDROID
+from app.platform.arch import MACHINE_ARCH
+from app.platform.filesystem import findExecutable
+from app.models.task import TaskError
+from app.install import installArchive, installFile
+from app.sources import Repo, fetchLatestRelease, fetchPypiFile, fetchPypiReleases, fetchReleaseAsset
+from app.update import parseVersion
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+    from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+
+QJS_REPO = Repo("quickjs-ng/quickjs", mirrors={"gitcode": "XiaoYouChR/quickjs-mirror"})
+COOKIE_DOMAIN = ".youtube.com"
+AUTH_COOKIE_NAMES = ("LOGIN_INFO", "SAPISID", "__Secure-1PAPISID", "__Secure-3PAPISID")
+
+
+def cookieFile() -> Path:
+    return APP_DATA_DIR / "YtDlp" / "cookies.txt"
+
+
+def hasCookieFile() -> bool:
+    path = cookieFile()
+    return path.is_file() and path.stat().st_size > 0
+
+
+def saveCookies(cookieString: str) -> None:
+    lines = ["# Netscape HTTP Cookie File"]
+    for pair in cookieString.split(";"):
+        pair = pair.strip()
+        if not pair or "=" not in pair:
+            continue
+        name, _, value = pair.partition("=")
+        lines.append(f"{COOKIE_DOMAIN}\tTRUE\t/\tTRUE\t0\t{name.strip()}\t{value.strip()}")
+    path = cookieFile()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def saveCookiesIfBetter(cookieString: str) -> None:
+    if any(name in cookieString for name in AUTH_COOKIE_NAMES):
+        saveCookies(cookieString)
+
+
+def loadCookieHeader() -> str:
+    path = cookieFile()
+    if not path.is_file():
+        return ""
+    pairs = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) >= 7:
+            pairs.append(f"{parts[5]}={parts[6]}")
+    return "; ".join(pairs)
+
+
+def clearCookies() -> None:
+    path = cookieFile()
+    if path.is_file():
+        path.unlink()
+
+
+class YtDlpConfig(PackConfig):
+    installFolder = ConfigItem("YtDlp", "InstallFolder", f"{APP_DATA_DIR}/YtDlp", serializer=PathSerializer(APP_DATA_DIR))
+    subtitleLanguages = ConfigItem("YtDlp", "SubtitleLanguages", "en")
+    shouldPreferMp4 = ConfigItem("YtDlp", "PreferMp4", True, BoolValidator())
+    shouldEmbedMetadata = ConfigItem("YtDlp", "EmbedMetadata", True, BoolValidator())
+    shouldEmbedChapters = ConfigItem("YtDlp", "EmbedChapters", True, BoolValidator())
+
+    def settingGroups(self, parent: QWidget) -> list[CollapsibleSettingCardGroup]:
+        from qfluentwidgets import FluentIcon, SwitchSettingCard
+        from app.view.components.setting_card_group import CollapsibleSettingCardGroup
+        from app.view.components.setting_cards import SelectFolderSettingCard
+
+        group = CollapsibleSettingCardGroup(self.tr('YouTube Download'), "ytdlp", parent)
+
+        runtimeCard = self.createRuntimeCard(youTubeRuntime, group)
+        cards = [runtimeCard]
+
+        if not IS_ANDROID:
+            installFolderCard = SelectFolderSettingCard(
+                ytDlpConfig.installFolder, f"{APP_DATA_DIR}/YtDlp",
+                self.tr('Runtime Environment Install Location'),
+                group,
+            )
+            installFolderCard.pathChanged.connect(runtimeCard._onInstallFolderChanged)
+            cards.insert(0, installFolderCard)
+
+        from .setting_cards import CookieSettingCard
+        cards.append(CookieSettingCard(group))
+
+        cards.extend([
+            SwitchSettingCard(
+                FluentIcon.VIDEO,
+                self.tr('Prefer MP4 Format'),
+                self.tr('Prefer H.264/MP4 codec to avoid WebM/MKV output'),
+                self.shouldPreferMp4,
+                group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.INFO,
+                self.tr('Embed Metadata'),
+                self.tr('Embed metadata (title, author, etc.) into file after download'),
+                self.shouldEmbedMetadata,
+                group,
+            ),
+            SwitchSettingCard(
+                FluentIcon.BOOK_SHELF,
+                self.tr('Embed Chapters'),
+                self.tr('Embed chapter markers into file after download'),
+                self.shouldEmbedChapters,
+                group,
+            ),
+        ])
+
+        group.addSettingCards(cards)
+        runtimeCard.refreshStatus()
+        return [group]
+
+
+ytDlpConfig = YtDlpConfig()
+
+
+class YouTubeRuntime(BinaryRuntime):
+    name = "yt-dlp"
+    canInstall = True
+    title = N("BinaryRuntime", 'YouTube Download')
+    description = N("BinaryRuntime", 'Support for hundreds of video sites including YouTube and Twitter')
+    icon = "GLOBE"
+    isRecommended = True
+
+    def installFolder(self) -> Path:
+        return Path(ytDlpConfig.installFolder.value)
+
+    def path(self) -> str:
+        folder = self.installFolder()
+        if not (folder / "yt_dlp" / "__init__.py").is_file():
+            return ""
+        return self.qjsPath()
+
+    def isAppManaged(self) -> bool:
+        return (self.installFolder() / "yt_dlp" / "__init__.py").is_file()
+
+    def ytDlpFolder(self) -> Path:
+        return self.installFolder()
+
+    def qjsPath(self) -> str:
+        if IS_ANDROID:
+            from app.platform.android import nativeLibraryDir
+            binary = Path(nativeLibraryDir()) / "libqjs.so"
+            return str(binary) if binary.is_file() else ""
+        return findExecutable(self.installFolder(), "qjs")
+
+    async def probeVersion(self) -> VersionInfo:
+        versionFile = self.installFolder() / "yt_dlp" / "version.py"
+        if not versionFile.is_file():
+            return VersionInfo("")
+
+        ytDlpVersion = parseConstant(versionFile, "__version__")
+
+        qjsPath = self.qjsPath()
+        if qjsPath:
+            import asyncio
+            process = await asyncio.create_subprocess_exec(
+                qjsPath, "--version",
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+            )
+            stdout, _ = await process.communicate()
+            isQjsOk = process.returncode == 0
+        else:
+            isQjsOk = False
+
+        return VersionInfo(
+            version=ytDlpVersion,
+            detail="QuickJS ✓" if isQjsOk else "",
+        )
+
+    async def fetchLatestVersion(self) -> str:
+        version, _ = await fetchNightlyWheel()
+        return version
+
+    def installedPaths(self) -> list[Path]:
+        folder = self.installFolder()
+        paths = [folder / "yt_dlp", folder / "yt_dlp_ejs"]
+        if not IS_ANDROID:
+            paths.append(folder / ("qjs.exe" if sys.platform == "win32" else "qjs"))
+        return paths
+
+    async def install(self, version: str, onProgress: Callable[[float], None]) -> None:
+        folder = self.installFolder()
+        if not IS_ANDROID:
+            qjsTag = (await fetchLatestRelease(QJS_REPO)).version
+            qjsPath = folder / ("qjs.exe" if sys.platform == "win32" else "qjs")
+            downloadPath = qjsPath.with_name(f"{qjsPath.name}.download")
+            try:
+                await fetchReleaseAsset(QJS_REPO, qjsTag, buildQjsAssetName(), downloadPath)
+                if sys.platform != "win32":
+                    downloadPath.chmod(downloadPath.stat().st_mode | 0o755)
+                installFile(downloadPath, qjsPath)
+            finally:
+                downloadPath.unlink(missing_ok=True)
+
+        _, wheelUrl = await fetchNightlyWheel()
+        archive = folder / "yt_dlp.whl"
+        await fetchPypiFile(wheelUrl, archive, onProgress)
+        await installArchive(archive, folder, subtree="yt_dlp/")
+
+        ejsInfoFile = folder / "yt_dlp" / "extractor" / "youtube" / "jsc" / "_builtin" / "vendor" / "_info.py"
+        ejsVersion = parseConstant(ejsInfoFile, "VERSION")
+        if ejsVersion:
+            ejsUrl = await fetchEjsWheel(ejsVersion)
+            ejsArchive = folder / "yt_dlp_ejs.whl"
+            await fetchPypiFile(ejsUrl, ejsArchive)
+            await installArchive(ejsArchive, folder, subtree="yt_dlp_ejs/")
+
+
+def parseConstant(path: Path, name: str) -> str:
+    if not path.is_file():
+        return ""
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == name:
+                        if isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+                            return node.value.value
+    except Exception:
+        pass
+    return ""
+
+
+async def fetchEjsWheel(version: str) -> str:
+    target = parseVersion(version)
+    exact: str = ""
+    compatible: dict[tuple[int, ...], str] = {}
+    for releaseVersion, files in (await fetchPypiReleases("yt-dlp-ejs")).items():
+        wheel = next((f for f in files if f["filename"].endswith("-py3-none-any.whl") and not f.get("yanked")), None)
+        if not wheel:
+            continue
+        parsed = parseVersion(releaseVersion)
+        if parsed == target:
+            exact = wheel["url"]
+            break
+        if parsed[:2] == target[:2] and "dev" not in releaseVersion:
+            compatible[parsed] = wheel["url"]
+    if exact:
+        return exact
+    if compatible:
+        return compatible[max(compatible)]
+    raise TaskError("未找到 yt-dlp-ejs {version}", version=version)
+
+
+async def fetchNightlyWheel() -> tuple[str, str]:
+    nightlies = {}
+    for version, files in (await fetchPypiReleases("yt-dlp")).items():
+        if "dev" not in version:
+            continue
+        wheel = next((f for f in files if f["filename"].endswith("-py3-none-any.whl") and not f.get("yanked")), None)
+        if wheel:
+            nightlies[parseVersion(version)] = wheel["url"]
+    if not nightlies:
+        raise TaskError("未找到 yt-dlp nightly")
+    latest = max(nightlies)
+    year, month, day, time = latest[:4]
+    return f"{year}.{month:02d}.{day:02d}.{time:06d}", nightlies[latest]
+
+
+def buildQjsAssetName() -> str:
+    if sys.platform == "win32":
+        return "qjs-windows-x86_64.exe"
+    elif sys.platform == "darwin":
+        return f"qjs-darwin-{MACHINE_ARCH}"
+    else:
+        arch = "aarch64" if MACHINE_ARCH == "arm64" else "x86_64"
+        return f"qjs-linux-{arch}"
+
+
+youTubeRuntime = YouTubeRuntime()

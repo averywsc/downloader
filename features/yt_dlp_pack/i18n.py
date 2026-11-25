@@ -1,0 +1,17 @@
+from app.i18n import N
+
+N("TaskErrors", 'Video is unavailable in your region, please try using a proxy: {detail}')
+N("TaskErrors", 'Video is unavailable, might be deleted or private: {detail}')
+N("TaskErrors", 'Private video requires Cookies from an authorised account; download through the browser extension or import Cookies in Settings: {detail}')
+N("TaskErrors", 'Members only video requires Cookies from a member account; download through the browser extension or import Cookies in Setting: {detail}')
+N("TaskErrors", 'Age-restricted video requires an account; download through the browser extension or import Cookies in Settings: {detail}')
+N("TaskErrors", 'Blocked by YouTube Captcha; download through the browser extension or import Cookies in Settings: {detail}')
+N("TaskErrors", "QuickJS 运行环境异常，请在设置中重新安装 yt-dlp（{detail}）")
+N("TaskErrors", "YouTube 解密组件缺失或不可用，请在设置中更新或重新安装 yt-dlp（{detail}）")
+N("TaskErrors", "YouTube Cookie 已失效或受限，请在设置中清除或重新导入 Cookie（{detail}）")
+N("TaskErrors", "请求的格式不可用，请在设置中更新 yt-dlp 后重试（{detail}）")
+N("TaskErrors", 'Request refused (403), link might have expired: {detail}')
+N("TaskErrors", 'Video metadata extraction failed: {detail}')
+N("TaskErrors", 'No available video format found')
+N("TaskErrors", "未找到 yt-dlp nightly")
+N("TaskErrors", "未找到 yt-dlp-ejs {version}")

@@ -1,0 +1,16 @@
+from app.i18n import N
+
+N("TaskErrors", 'Request refused (403), link might have expired: {detail}')
+N("TaskErrors", 'Resource does not exist (404), link might no longer be available: {detail}')
+N("TaskErrors", 'Server returned an error ({detail})')
+N("TaskErrors", 'Fetched content is not a valid playlist; the link may have expired ({detail})')
+N("TaskErrors", 'Missing dependency ({detail})')
+N("TaskErrors", 'Domain resolution failed, please check your connection ({detail})')
+N("TaskErrors", 'Connection refused, please check your connection ({detail})')
+N("TaskErrors", 'Connection timed out, please check your connection ({detail})')
+N("TaskErrors", 'SSL handshake failed, please check your connection ({detail})')
+N("TaskErrors", 'N_m3u8DL-RE auto installation not supported on this platform: {platform}')
+N("TaskErrors", 'No N_m3u8DL-RE installer package found for {target}')
+N("TaskErrors", 'macOS has denied access to the download folder; please add Dodown into System Settings > Privacy & Security > Full Disk Access')
+N("TaskErrors", 'No permission to access download folder: {folder}')
+N("TaskErrors", 'Output file not found: {detail}')
