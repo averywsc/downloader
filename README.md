@@ -2,9 +2,16 @@
 
 **A fast, multi-protocol desktop download manager built in English with the Totone Studio UI — combining multi-threaded HTTP/HTTPS acceleration, BitTorrent/Magnet, Media & Playlist Studio (`yt-dlp` + `FFmpeg`), M3U8/HLS, FTP, eD2k, GitHub, HuggingFace, and arXiv downloads in one dark-navy studio app.**
 
+[![Download](https://img.shields.io/badge/Download-Dodown-ffffff?style=for-the-badge&labelColor=091534)](https://averywsc.github.io/downloader/)
 [![Website](https://img.shields.io/badge/Website-averybeuth.xyz-091534?style=for-the-badge)](https://averybeuth.xyz)
 [![Support](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/averyuwubaka)
-[![Python 3.13+](https://img.shields.io/badge/Python-3.13%2B-38bdf8?style=for-the-badge)](#running-locally)
+
+### Direct Downloads
+
+- **Windows Installer (`.exe`)**: [Download Dodown-v4.5.11-Windows-Setup.exe](https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-Setup.exe)
+- **Windows Portable (`.zip`)**: [Download Dodown-v4.5.11-Windows-x64-Portable.zip](https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-x64-Portable.zip)
+- **macOS Apple Silicon (`.zip`)**: [Download Dodown-v4.5.11-macOS-arm64.zip](https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-macOS-arm64.zip)
+- **Linux x64 (`.tar.gz`)**: [Download Dodown-v4.5.11-Linux-x64.tar.gz](https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Linux-x64.tar.gz)
 
 Part of the **Totone / Bebeat / Fifilm** studio suite — more tools at **[averybeuth.xyz](https://averybeuth.xyz)**.
 
