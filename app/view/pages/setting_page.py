@@ -296,10 +296,13 @@ class SettingPage(QWidget):
                                   self.tr('Show current download speed next to menu bar icon'),
                                   cfg.shouldShowMenuBarSpeed),
             ])
+        langOptions = cfg.language.options
+        if cfg.language.value not in langOptions:
+            cfg.language.value = "en_US" if "en_US" in langOptions else langOptions[0]
         personalCards.append(
             ComboBoxSettingCard(cfg.language, FluentIcon.LANGUAGE, self.tr('Language'),
                                 self.tr('Set the preferred language for the interface'),
-                                texts=[self.tr('Use System Settings'), *map(toLanguageText, cfg.language.options[1:])]),
+                                texts=[self.tr('Use System Settings'), *map(toLanguageText, langOptions[1:])]),
         )
         self.personalGroup.addSettingCards(personalCards)
 

@@ -19,9 +19,9 @@ LANGUAGE_TEXTS = {
 def loadLanguages() -> list[str]:
     from PySide6.QtCore import QDir
     names = QDir(":/i18n").entryList(["gd3.*_*.qm"])
-    codes = sorted(name.removeprefix("gd3.").removesuffix(".qm") for name in names)
-    # 粤语的设置值是 yue_HK，文件却叫 zh_HK
-    return ["yue_HK" if code == "zh_HK" else code for code in codes]
+    codes = {name.removeprefix("gd3.").removesuffix(".qm") for name in names}
+    codes.add("en_US")
+    return sorted("yue_HK" if code == "zh_HK" else code for code in codes)
 
 
 def toLanguageText(code: str) -> str:

@@ -329,8 +329,11 @@ class BasicSettingsPage(QWidget):
 
         self.langCombo = ComboBox(self)
         self.langCombo.setMinimumWidth(200)
-        self.langCombo.addItems([self.tr('Use System Settings'), *map(toLanguageText, cfg.language.options[1:])])
-        self.langCombo.setCurrentIndex(cfg.language.options.index(cfg.language.value))
+        langOptions = cfg.language.options
+        if cfg.language.value not in langOptions:
+            cfg.language.value = "en_US" if "en_US" in langOptions else langOptions[0]
+        self.langCombo.addItems([self.tr('Use System Settings'), *map(toLanguageText, langOptions[1:])])
+        self.langCombo.setCurrentIndex(langOptions.index(cfg.language.value))
 
         self.browseButton = PushButton(self.tr('Browse...'), self)
 
