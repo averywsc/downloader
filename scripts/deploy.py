@@ -203,15 +203,16 @@ def buildArgs() -> list[str]:
             '--assume-yes-for-downloads',
             '--msvc=latest',
             '--windows-icon-from-ico=app/assets/logo.ico',
+            '--include-data-files=app/assets/dodown_logo.svg=app/assets/dodown_logo.svg',
             '--include-data-dir=app/assets/file_icons=app/assets/file_icons',
-            '--company-name=XiaoYouChR',
+            f'--company-name={AUTHOR}',
             '--product-name="Dodown"',
             f'--file-version={BUILD_VERSION}',
             f'--product-version={BUILD_VERSION}',
             '--file-description="Dodown"',
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
-            'Ghost-Downloader-3.py',
+            'Dodown.py',
         ]
 
     if sys.platform == "darwin":
@@ -229,9 +230,10 @@ def buildArgs() -> list[str]:
             f"--macos-app-version={BUILD_VERSION}",
             "--macos-app-macos-min-version=13.0",
             "--macos-app-icon=app/assets/logo.icns",
+            '--include-data-files=app/assets/dodown_logo.svg=app/assets/dodown_logo.svg',
             f'--copyright="Copyright(C) {YEAR} {AUTHOR}"',
             '--output-dir=dist',
-            'Ghost-Downloader-3.py',
+            'Dodown.py',
         ]
 
     return [
@@ -245,8 +247,9 @@ def buildArgs() -> list[str]:
         '--include-module=PySide6.QtDBus',
         '--assume-yes-for-downloads',
         '--linux-icon=app/assets/logo.png',
+        '--include-data-files=app/assets/dodown_logo.svg=app/assets/dodown_logo.svg',
         '--output-dir=dist',
-        'Ghost-Downloader-3.py',
+        'Dodown.py',
     ]
 
 
@@ -273,9 +276,9 @@ def copyPacks() -> None:
         raise RuntimeError("No feature packs were found to copy.")
 
     if sys.platform == "darwin":
-        targetRoot = Path("dist") / "Ghost-Downloader-3.app" / "Contents" / "MacOS" / "features"
+        targetRoot = Path("dist") / "Dodown.app" / "Contents" / "MacOS" / "features"
     else:
-        targetRoot = Path("dist") / "Ghost-Downloader-3.dist" / "features"
+        targetRoot = Path("dist") / "Dodown.dist" / "features"
 
     if not targetRoot.parent.exists():
         raise FileNotFoundError(f"dist directory does not exist: {targetRoot.parent}")
@@ -292,7 +295,7 @@ def copyPacks() -> None:
 
 
 def patchInfoPlist() -> None:
-    appBundle = Path("dist") / "Ghost-Downloader-3.app"
+    appBundle = Path("dist") / "Dodown.app"
     plistPath = appBundle / "Contents" / "Info.plist"
     resourcesDir = appBundle / "Contents" / "Resources"
     resourcesDir.mkdir(parents=True, exist_ok=True)
@@ -315,10 +318,10 @@ def patchInfoPlist() -> None:
         plist = plistlib.load(f)
     plist["CFBundleDocumentTypes"] = documentTypes
     plist["CFBundleIdentifier"] = DESKTOP_ID
-    plist["NSDownloadsFolderUsageDescription"] = 'Dodown 需要访问下载文件夹以管理和删除下载的文件。'
+    plist["NSDownloadsFolderUsageDescription"] = 'Dodown needs access to your Downloads folder to save and manage downloaded files.'
     plist["CFBundleURLTypes"] = [{
         "CFBundleURLName": DESKTOP_ID,
-        "CFBundleURLSchemes": ["ghostdownloader", "magnet", "ed2k", "ftp", "ftps", "thunder", "flashget", "qqdl"],
+        "CFBundleURLSchemes": ["dodown", "magnet", "ed2k", "ftp", "ftps", "thunder", "flashget", "qqdl"],
     }]
     with open(plistPath, "wb") as f:
         plistlib.dump(plist, f)

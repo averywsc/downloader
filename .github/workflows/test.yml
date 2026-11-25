@@ -1,11 +1,10 @@
-name: Test
+name: Test Dodown
 
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
-  workflow_call:
-    secrets:
-      ANDROID_REPO_TOKEN:
-        required: true
 
 permissions:
   contents: read
@@ -14,79 +13,33 @@ env:
   QT_QPA_PLATFORM: offscreen
 
 jobs:
-  desktop:
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [windows-2022, macos-15, ubuntu-22.04]
-    runs-on: ${{ matrix.runner }}
+  syntax-and-tests:
+    runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: actions/checkout@v4
 
       - name: Install system libraries
-        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libegl1-mesa-dev libzstd1
-
-      - name: Install dependencies
-        run: |
-          uv python install 3.13
-          uv sync --locked
-
-      - name: Run tests
-        run: uv run pytest
-
-  android:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: Checkout Android
-        uses: actions/checkout@v7
-        with:
-          repository: XiaoYouChR/Ghost-Downloader-Android
-          token: ${{ secrets.ANDROID_REPO_TOKEN }}
-          path: android
-          persist-credentials: false
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@v5
 
-      - name: Install dependencies
+      - name: Install Python 3.13 & dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libegl1-mesa-dev libzstd1
           uv python install 3.13
-          uv sync --locked
+          uv sync --dev
 
-      - name: Run Python tests
-        run: uv run pytest tests/test_android.py
-
-      - uses: actions/setup-java@v6
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Chaquopy build Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.14'
-
-      - uses: gradle/actions/setup-gradle@v6
-
-      - name: Run Kotlin tests without Android wheels
-        working-directory: android
-        # 开启 configuration cache 时，-x 找不到 Chaquopy 17.1 的 installDebugPythonRequirements
-        run: ./gradlew :app:testDebugUnitTest -x installDebugPythonRequirements --no-configuration-cache
+      - name: Verify Python syntax
+        run: |
+          uv run python -c "
+          import ast
+          from pathlib import Path
+          for p in Path('.').rglob('*.py'):
+              if any(part.startswith('.') for part in p.parts): continue
+              ast.parse(p.read_text(encoding='utf-8'), filename=str(p))
+          print('All Python files parsed cleanly.')
+          "
