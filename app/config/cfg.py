@@ -300,6 +300,42 @@ class Config(QConfig):
         shouldShowDockSpeed = ConfigItem("Personalization", "ShowDockSpeed", True, BoolValidator())
         shouldShowMenuBarSpeed = ConfigItem("Personalization", "ShowMenuBarSpeed", True, BoolValidator())
     language = LanguageConfigItem("Personalization", "Language", "en_US", restart=True)
+    totoneThemePreset = OptionsConfigItem(
+        "Personalization", "TotoneThemePreset", "Totone Navy",
+        OptionsValidator([
+            "Totone Navy", "Midnight OLED", "Cybercore Lime", "Frutiger Aero",
+            "Sakura Dusk", "Studio Neutral", "Warm Film", "Paper Light",
+        ]),
+    )
+    showFloatingDropZone = ConfigItem("Personalization", "ShowFloatingDropZone", False, BoolValidator())
+
+    # Dodown Power Automation
+    autoExtractArchives = ConfigItem("Automation", "AutoExtractArchives", False, BoolValidator())
+    deleteArchiveAfterExtract = ConfigItem("Automation", "DeleteArchiveAfterExtract", False, BoolValidator())
+    autoConvertEnabled = ConfigItem("Automation", "AutoConvertEnabled", False, BoolValidator())
+    autoConvertRules = ConfigItem(
+        "Automation", "AutoConvertRules",
+        [
+            {"fromExt": ".mkv", "toExt": ".mp4", "enabled": True},
+            {"fromExt": ".webm", "toExt": ".mp3", "enabled": False},
+            {"fromExt": ".webp", "toExt": ".png", "enabled": False},
+        ],
+        serializer=JsonConfigSerializer(list, list),
+    )
+    siteRulesEnabled = ConfigItem("Automation", "SiteRulesEnabled", False, BoolValidator())
+    siteRules = ConfigItem(
+        "Automation", "SiteRules",
+        [
+            {"domain": "github.com", "folder": "Code", "maxThreads": 8},
+            {"domain": "huggingface.co", "folder": "Models", "maxThreads": 8},
+            {"domain": "youtube.com", "folder": "Media", "maxThreads": 4},
+            {"domain": "youtu.be", "folder": "Media", "maxThreads": 4},
+        ],
+        serializer=JsonConfigSerializer(list, list),
+    )
+    quietHoursEnabled = ConfigItem("Automation", "QuietHoursEnabled", False, BoolValidator())
+    quietHoursStart = ConfigItem("Automation", "QuietHoursStart", "00:00")
+    quietHoursEnd = ConfigItem("Automation", "QuietHoursEnd", "07:00")
 
     # 软件
     shouldCheckUpdateAtStartup = ConfigItem("Software", "CheckUpdateAtStartUp", True, BoolValidator())

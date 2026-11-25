@@ -126,6 +126,21 @@ class SettingPage(QWidget):
             SwitchSettingCard(FluentIcon.BROOM, self.tr('Automatically Remove Tasks With Missing Content'),
                               self.tr('Automatically remove tasks whose contents are missing from the task list,\ncaused by file operations or possible disk disconnections'),
                               cfg.shouldRemoveMissingTasks),
+            SwitchSettingCard(FluentIcon.ZIP_FOLDER, self.tr('Auto-Extract Archives'),
+                              self.tr('Automatically extract .zip and .tar archives into a subfolder when completed'),
+                              cfg.autoExtractArchives),
+            SwitchSettingCard(FluentIcon.DELETE, self.tr('Delete Archive After Extraction'),
+                              self.tr('Remove the original archive file after successful auto-extraction'),
+                              cfg.deleteArchiveAfterExtract),
+            SwitchSettingCard(FluentIcon.MOVIE, self.tr('Auto-Convert on Complete'),
+                              self.tr('Automatically convert finished files (e.g. .mkv → .mp4, .webm → .mp3) using FFmpeg'),
+                              cfg.autoConvertEnabled),
+            SwitchSettingCard(FluentIcon.GLOBE, self.tr('Site-Specific Routing Rules'),
+                              self.tr('Route downloads to subfolders and cap threads per domain (e.g. github.com → Code)'),
+                              cfg.siteRulesEnabled),
+            SwitchSettingCard(FluentIcon.DATE_TIME, self.tr('Scheduled Quiet Hours'),
+                              self.tr('Automatically uncap download speed overnight and restore daytime limits'),
+                              cfg.quietHoursEnabled),
         ])
 
         self.clientProfileCard = IdentitySettingCard()
@@ -247,6 +262,19 @@ class SettingPage(QWidget):
         )
 
         personalCards = [
+            ComboBoxSettingCard(
+                cfg.totoneThemePreset, FluentIcon.PALETTE, self.tr('Totone Studio Theme'),
+                self.tr('Switch between 8 Totone studio color presets'),
+                texts=[
+                    "Totone Navy", "Midnight OLED", "Cybercore Lime", "Frutiger Aero",
+                    "Sakura Dusk", "Studio Neutral", "Warm Film", "Paper Light",
+                ],
+            ),
+            SwitchSettingCard(
+                FluentIcon.PIN, self.tr('Floating Quick-Drop Pill'),
+                self.tr('Keep a compact always-on-top drop target pill on your desktop'),
+                cfg.showFloatingDropZone,
+            ),
             ComboBoxSettingCard(cfg.themeMode, FluentIcon.BRUSH, self.tr('Application Theme'),
                                 self.tr('Change application appearance'),
                                 texts=[self.tr('Light'), self.tr('Dark'), self.tr('Follow System Settings')]),

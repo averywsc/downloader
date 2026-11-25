@@ -28,8 +28,13 @@ from app.services.port_listener import PortListener
 from app.signal_bus import signalBus
 from app.services.update_service import UpdateState
 from app.view.components.labels import IconBodyLabel
+from app.view.components.totone_status_bar import TotoneStatusBar
 from app.view.pages.task_page import TaskPage
-from app.view.totone_theme import TOTONE_ACC, TOTONE_BG, TOTONE_EDGE, TOTONE_PANEL, dodownIcon, styleWindowTotone
+from app.view.totone_theme import (
+    TOTONE_ACC, TOTONE_BG, TOTONE_EDGE, TOTONE_PANEL, TOTONE_THEME_NAMES,
+    applyTotoneTheme, currentPalette, dodownIcon, styleWindowTotone,
+)
+from app.services.power_tools import PowerToolsService
 
 if sys.platform == "darwin":
     import Cocoa
@@ -150,6 +155,13 @@ class MainWindow(MSFluentWindow):
         self.setAcceptDrops(True)
         self._dropOverlay = DropOverlay(self)
 
+        self._powerTools = PowerToolsService(self._taskService, parent=self)
+        self.totoneStatusBar = TotoneStatusBar(self._taskService, self._speedMeter, parent=self)
+        self._floatingDrop = None
+        if hasattr(self, "hBoxLayout"):
+            m = self.hBoxLayout.contentsMargins()
+            self.hBoxLayout.setContentsMargins(m.left(), m.top(), m.right(), 30)
+
     def _initLayout(self) -> None:
         self.navigationInterface.addItem(
             routeKey="TaskPage", icon=FluentIcon.DOWNLOAD, text=self.tr('Tasks'),
@@ -158,6 +170,22 @@ class MainWindow(MSFluentWindow):
         self.navigationInterface.addItem(
             routeKey="addTaskButton", icon=FluentIcon.ADD, text=self.tr('New Task'),
             selectable=False, onClick=lambda: self.addUrls([]), position=NavigationItemPosition.TOP,
+        )
+        self.navigationInterface.addItem(
+            routeKey="mediaStudioButton", icon=FluentIcon.VIDEO, text=self.tr('Media'),
+            selectable=False, onClick=self.openMediaStudio, position=NavigationItemPosition.TOP,
+        )
+        self.navigationInterface.addItem(
+            routeKey="batchUrlButton", icon=FluentIcon.ADD_TO, text=self.tr('Batch'),
+            selectable=False, onClick=self.openBatchUrlDialog, position=NavigationItemPosition.TOP,
+        )
+        self.navigationInterface.addItem(
+            routeKey="hashCheckButton", icon=FluentIcon.FINGERPRINT, text=self.tr('Verify'),
+            selectable=False, onClick=self.openHashChecker, position=NavigationItemPosition.BOTTOM,
+        )
+        self.navigationInterface.addItem(
+            routeKey="automationButton", icon=FluentIcon.DATE_TIME, text=self.tr('Rules'),
+            selectable=False, onClick=self.openAutomationRules, position=NavigationItemPosition.BOTTOM,
         )
         self.navigationInterface.addItem(
             routeKey="SettingPage", icon=FluentIcon.SETTING, text=self.tr('Settings'),
@@ -254,6 +282,16 @@ class MainWindow(MSFluentWindow):
         self.searchEdit.textChanged.connect(self._onSearchTextChanged)
 
         QShortcut(QKeySequence.StandardKey.Find, self).activated.connect(self._onSearchShortcut)
+        QShortcut(QKeySequence("Ctrl+K"), self).activated.connect(self.openCommandPalette)
+
+        self.totoneStatusBar.commandPaletteRequested.connect(self.openCommandPalette)
+        self.totoneStatusBar.dropWidgetToggled.connect(self.setFloatingDropVisible)
+        cfg.showFloatingDropZone.valueChanged.connect(self.setFloatingDropVisible)
+        cfg.totoneThemePreset.valueChanged.connect(self._applyTotonePreset)
+        self._powerTools.noticeRequested.connect(self._onPowerNotice)
+        self._powerTools.quietHoursStateChanged.connect(self.totoneStatusBar.setQuietHoursActive)
+        if cfg.showFloatingDropZone.value:
+            self.setFloatingDropVisible(True)
 
         if self._updateService is not None:
             self._updateService.changed.connect(self._onUpdateChanged, owner=self)
@@ -541,10 +579,116 @@ class MainWindow(MSFluentWindow):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        if hasattr(self, "totoneStatusBar") and self.totoneStatusBar is not None:
+            h = self.totoneStatusBar.height()
+            self.totoneStatusBar.setGeometry(0, self.height() - h, self.width(), h)
+            self.totoneStatusBar.raise_()
         if self._dropOverlay is not None and self._dropOverlay.isVisible():
             self._dropOverlay.setGeometry(self.rect())
         if self.searchEdit is not None and self.searchEdit.isVisible():
             self._refreshSearchEditGeometry()
+
+    def _applyTotonePreset(self, presetName: str) -> None:
+        app = QApplication.instance()
+        if app is not None:
+            applyTotoneTheme(app, presetName)
+        styleWindowTotone(self, presetName)
+        if hasattr(self, "totoneStatusBar"):
+            self.totoneStatusBar.refreshTheme()
+        if self._floatingDrop is not None:
+            self._floatingDrop.update()
+        self.update()
+
+    def _onPowerNotice(self, level: str, title: str, content: str) -> None:
+        fn = {
+            "success": InfoBar.success,
+            "warning": InfoBar.warning,
+            "error": InfoBar.error,
+        }.get(level, InfoBar.info)
+        fn(title, content, duration=4500, position=InfoBarPosition.BOTTOM_RIGHT, parent=self)
+
+    def setFloatingDropVisible(self, visible: bool) -> None:
+        if visible:
+            if self._floatingDrop is None:
+                from app.view.shell.drop_widget import FloatingDropWidget
+                self._floatingDrop = FloatingDropWidget(self._speedMeter, self._taskService)
+                self._floatingDrop.urlsDropped.connect(self.addUrls)
+                self._floatingDrop.activateRequested.connect(lambda: (self.show(), raiseWindow(self)))
+            self._floatingDrop.show()
+            self._floatingDrop.raise_()
+        elif self._floatingDrop is not None:
+            self._floatingDrop.hide()
+
+    def openMediaStudio(self) -> None:
+        from app.view.dialogs.power_dialogs import MediaStudioDialog
+        dlg = MediaStudioDialog(onQueueUrls=self.addUrls, parent=self)
+        dlg.exec()
+        dlg.deleteLater()
+
+    def openBatchUrlDialog(self) -> None:
+        from app.view.dialogs.batch_url import BatchUrlDialog
+        dlg = BatchUrlDialog(self)
+        if dlg.exec() and dlg.urls():
+            self.addUrls(dlg.urls())
+        dlg.deleteLater()
+
+    def openHashChecker(self) -> None:
+        from app.view.dialogs.power_dialogs import HashCheckerDialog
+        dlg = HashCheckerDialog(self._powerTools, parent=self)
+        dlg.exec()
+        dlg.deleteLater()
+
+    def openAutomationRules(self) -> None:
+        from app.view.dialogs.power_dialogs import AutomationRulesDialog
+        dlg = AutomationRulesDialog(self)
+        dlg.exec()
+        dlg.deleteLater()
+
+    def openCommandPalette(self) -> None:
+        from app.view.dialogs.command_palette import CommandPaletteDialog, PaletteAction
+
+        actions: list[PaletteAction] = [
+            PaletteAction("New Download Task", "TASK", lambda: self.addUrls([]), "add url link"),
+            PaletteAction("Media & Playlist Studio (MP4 / MP3 / FLAC / WAV / Clip)", "MEDIA", self.openMediaStudio, "yt-dlp youtube audio clip"),
+            PaletteAction("Batch URL Range Generator ([01-12])", "TASK", self.openBatchUrlDialog, "range template series"),
+            PaletteAction("Hash & VirusTotal Verifier", "TOOLS", self.openHashChecker, "sha256 md5 checksum security"),
+            PaletteAction("Automation, Site Rules & Quiet Hours", "RULES", self.openAutomationRules, "schedule convert extract"),
+            PaletteAction("Start All Tasks", "QUEUE", lambda: self._taskService.startAll(), "resume play"),
+            PaletteAction("Pause All Tasks", "QUEUE", lambda: self._taskService.pauseAll(), "stop"),
+            PaletteAction(
+                "Toggle Speed Limit", "SPEED",
+                lambda: cfg.set(cfg.isSpeedLimitEnabled, not cfg.isSpeedLimitEnabled.value),
+                "throttle cap bandwidth",
+            ),
+            PaletteAction(
+                "Toggle Floating Drop Pill", "UI",
+                lambda: cfg.set(cfg.showFloatingDropZone, not cfg.showFloatingDropZone.value),
+                "mini widget drag drop",
+            ),
+            PaletteAction(
+                "Toggle Auto-Extract Archives", "AUTOMATION",
+                lambda: cfg.set(cfg.autoExtractArchives, not cfg.autoExtractArchives.value),
+                "unzip zip tar",
+            ),
+            PaletteAction(
+                "Toggle Auto-Convert on Complete", "AUTOMATION",
+                lambda: cfg.set(cfg.autoConvertEnabled, not cfg.autoConvertEnabled.value),
+                "ffmpeg mkv mp4 mp3",
+            ),
+            PaletteAction("Open Downloads Folder", "FILES", lambda: revealInFolder(str(cfg.downloadFolder.value)), "explorer finder"),
+            PaletteAction("Go to Tasks", "NAV", self.showTasks, "downloads list"),
+            PaletteAction("Go to Settings", "NAV", self.showSettings, "preferences config"),
+        ]
+        for themeName in TOTONE_THEME_NAMES:
+            actions.append(PaletteAction(
+                f"Theme: {themeName}", "THEME",
+                lambda name=themeName: cfg.set(cfg.totoneThemePreset, name),
+                "totone color palette appearance",
+            ))
+
+        dlg = CommandPaletteDialog(actions, onUrlSubmitted=lambda u: self.addUrls([u]), parent=self)
+        dlg.exec()
+        dlg.deleteLater()
 
     def closeEvent(self, event) -> None:
         if event.spontaneous():
