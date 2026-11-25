@@ -11,7 +11,7 @@ from .task import YouTubeFile, buildFormatPair, probeFormats, probePlaylist, par
 if TYPE_CHECKING:
     from .task import YouTubeTask
 
-UI_CLASS = "com.xychr.ghostdownloader.features.yt_dlp_pack.YtDlpUi"
+UI_CLASS = "com.avery.dodown.features.yt_dlp_pack.YtDlpUi"
 
 
 def toDraftOptions(pairs: list[tuple[str, str]], **params: Any) -> list[dict]:

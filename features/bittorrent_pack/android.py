@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .pack import BitTorrentPack
     from .task import BTTask
 
-UI_CLASS = "com.xychr.ghostdownloader.features.bittorrent_pack.BitTorrentUi"
+UI_CLASS = "com.avery.dodown.features.bittorrent_pack.BitTorrentUi"
 
 
 def init(pack: BitTorrentPack) -> dict[str, Signal]:

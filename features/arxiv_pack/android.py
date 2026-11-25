@@ -7,7 +7,7 @@ from http_pack.android import editFields as editHttpFields
 if TYPE_CHECKING:
     from .task import ArxivTask
 
-UI_CLASS = "com.xychr.ghostdownloader.features.arxiv_pack.ArxivUi"
+UI_CLASS = "com.avery.dodown.features.arxiv_pack.ArxivUi"
 
 
 def editFields(task: ArxivTask) -> dict:

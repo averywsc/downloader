@@ -9,7 +9,7 @@ from app.models.task import TaskStatus
 if TYPE_CHECKING:
     from .task import M3U8Task, M3U8TaskStep
 
-UI_CLASS = "com.xychr.ghostdownloader.features.m3u8_pack.M3u8Ui"
+UI_CLASS = "com.avery.dodown.features.m3u8_pack.M3u8Ui"
 
 
 def editFields(task: M3U8Task) -> dict:

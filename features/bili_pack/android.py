@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from .pack import BilibiliPack
     from .task import BilibiliTask
 
-UI_CLASS = "com.xychr.ghostdownloader.features.bili_pack.BilibiliUi"
+UI_CLASS = "com.avery.dodown.features.bili_pack.BilibiliUi"
 
 
 def qualityOptions() -> list[dict[str, int | str]]:

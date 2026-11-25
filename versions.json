@@ -29,32 +29,32 @@
     },
     "full": {
       "Windows-x86_64": {
-        "file": "Ghost-Downloader-v4.5.11-Windows-x86_64.zip",
+        "file": "Dodown-v4.5.11-Windows-x86_64.zip",
         "sha256": "2f4bef61dfbdd362758c20db454637e00e70c8ae35212dd3c5f1725edae450dc",
         "size": 46701606
       },
       "Windows-arm64": {
-        "file": "Ghost-Downloader-v4.5.11-Windows-arm64.zip",
+        "file": "Dodown-v4.5.11-Windows-arm64.zip",
         "sha256": "36c31276d0db5bcd574bf9f10c778a124d12b303ec5d9e6582eed28b1cd537be",
         "size": 40462044
       },
       "macOS-arm64": {
-        "file": "Ghost-Downloader-v4.5.11-macOS-arm64.dmg",
+        "file": "Dodown-v4.5.11-macOS-arm64.dmg",
         "sha256": "36d531576819349920abb0008a6105046f5e48c3bcf7d8e478c61b03edb87ca9",
         "size": 67408491
       },
       "macOS-x86_64": {
-        "file": "Ghost-Downloader-v4.5.11-macOS-x86_64.dmg",
+        "file": "Dodown-v4.5.11-macOS-x86_64.dmg",
         "sha256": "20c0db4e0d0a48a184d99d39a69f9dc27d856aed1d4e3350077fa2e4919d4d6c",
         "size": 71660159
       },
       "Linux-x86_64": {
-        "file": "Ghost-Downloader-v4.5.11-Linux-x86_64.tar.xz",
+        "file": "Dodown-v4.5.11-Linux-x86_64.tar.xz",
         "sha256": "55ea6a137fa66885229061853858086a0e195f2dcfe874e945eac3addbb82af8",
         "size": 71800912
       },
       "Linux-arm64": {
-        "file": "Ghost-Downloader-v4.5.11-Linux-arm64.tar.xz",
+        "file": "Dodown-v4.5.11-Linux-arm64.tar.xz",
         "sha256": "214297ee95828d6d2589fc9468adfbfaa140de7fd91312cf4ca01cd8bf510760",
         "size": 66224860
       }

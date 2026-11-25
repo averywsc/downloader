@@ -27,10 +27,7 @@ from app.platform.desktop import openChromiumUrl, revealInFolder
 from app.platform.file_association import registerUrlScheme, unregisterUrlScheme
 from app.platform.run_at_login import setRunAtLogin
 from app.services.port_listener import ListenStatus
-from app.config.constants import (
-    CHROME_WEBSTORE_URL, EDGE_ADDONS_URL, FIREFOX_ADDONS_URL,
-    LATEST_EXTENSION_VERSION,
-)
+from app.config.constants import LATEST_EXTENSION_VERSION
 
 if sys.platform == "win32":
     from ctypes import cast, POINTER
@@ -44,9 +41,8 @@ if TYPE_CHECKING:
     from app.models.pack import BinaryRuntime
 
 WINDOW_SIZE = QSize(960, 600)
-PREVIEW_GIF = ":/res/install_chrome_extension_guidance.webp"
-PREVIEW_SIZE = QSize(592, 333)
-STORE_COLUMN_WIDTH = 280
+PREVIEW_SIZE = QSize(540, 280)
+STORE_COLUMN_WIDTH = 300
 
 NEUTRAL_CHIP_COLORS = ("#EFEFEF", "#666666", "#16254d", "#8d9cc4")
 SUCCESS_CHIP_COLORS = ("#E8F5E9", "#0F7B46", "#0e2a2f", "#4ADE80")
@@ -274,7 +270,8 @@ class WelcomePage(QWidget):
 
     def _initWidget(self) -> None:
         self.iconLabel = QLabel(self)
-        self.iconLabel.setPixmap(QIcon(":/image/logo.png").pixmap(88, 88))
+        from app.view.totone_theme import dodownIcon
+        self.iconLabel.setPixmap(dodownIcon().pixmap(88, 88))
         self.iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.titleLabel = TitleLabel(self.tr('Welcome to Dodown'), self)
@@ -415,36 +412,28 @@ class BrowserExtensionPage(QWidget):
 
         self.previewLabel = QLabel(self)
         self.previewLabel.setFixedSize(PREVIEW_SIZE)
-        self.previewLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        movie = QMovie(PREVIEW_GIF, parent=self)
-        if movie.isValid():
-            movie.setScaledSize(PREVIEW_SIZE)
-            self.previewLabel.setMovie(movie)
-            movie.start()
-        else:
-            self.previewLabel.setText(self.tr('Installation Tutorial (GIF)'))
-            if isDarkTheme():
-                bg, fg = "rgba(255,255,255,0.06)", "rgba(255,255,255,0.5)"
-            else:
-                bg, fg = "rgba(0,0,0,0.04)", "rgba(0,0,0,0.4)"
-            self.previewLabel.setStyleSheet(
-                f"QLabel {{ background: {bg}; color: {fg}; border-radius: 8px; }}"
-            )
+        self.previewLabel.setWordWrap(True)
+        self.previewLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.previewLabel.setText(
+            "<b>Custom Dodown Browser Extension (Manifest V3)</b><br><br>"
+            "1. Click <b>Install Dodown Extension</b> on the right to unpack it.<br><br>"
+            "2. Open <code>chrome://extensions</code> (or Edge / Brave / Arc).<br><br>"
+            "3. Enable <b>Developer Mode</b> and click <b>Load unpacked</b>.<br><br>"
+            "4. Open the <b>Dodown</b> extension popup and click <b>Auto Pair</b>."
+        )
+        self.previewLabel.setStyleSheet(
+            "QLabel { background: #091534; color: #f4f7ff; border: 1px solid #16254d; "
+            "border-radius: 5px; padding: 20px; font-size: 13px; }"
+        )
 
         self.manualCard = ActionCard(
-            FluentIcon.DOWNLOAD, self.tr('Manual Install'),
-            self.tr('Updates automatically with the desktop client; works with all Chromium-based browsers'),
+            FluentIcon.DOWNLOAD, self.tr('Install Dodown Extension'),
+            self.tr('Unpacks Dodown\'s custom Manifest V3 extension for Chrome, Edge, Brave, and other Chromium browsers'),
             isRecommended=True, parent=self,
         )
         self.storeCards: list[tuple[ActionCard, str]] = []
-        for title, url in [
-            (self.tr('Chrome Store'), CHROME_WEBSTORE_URL),
-            (self.tr('Edge Store'), EDGE_ADDONS_URL),
-            (self.tr('Firefox Store'), FIREFOX_ADDONS_URL),
-        ]:
-            self.storeCards.append((ActionCard(FluentIcon.GLOBE, title, parent=self), url))
 
-        self.footnote = CaptionLabel(self.tr('Store versions need to pass review before updates;\nmay lag behind the desktop client'), self)
+        self.footnote = CaptionLabel(self.tr('100% local & custom-built for Dodown — no external store account required.'), self)
         self.footnote.setTextColor(Qt.GlobalColor.gray, Qt.GlobalColor.gray)
 
     def _initLayout(self) -> None:

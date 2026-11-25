@@ -389,7 +389,7 @@ class HttpTaskStep(TaskStep):
                     break
                 client = buildClient(emulation=self._emulation, userAgent=self.userAgent or None, readTimeout=STREAM_READ_TIMEOUT)
                 try:
-                    # https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/888
+                    # Preserve range handling
                     shouldConfirmFileSize = isinstance(self.task, HttpTask) and self.subworkers == [subworker] and subworker.position == 0
                     httpPos = self.httpByteOffset + subworker.position
                     # 请求至 Step 末尾，以便直接并入右侧分片
@@ -532,7 +532,7 @@ class HttpTaskStep(TaskStep):
                 except ExceptionGroup as eg:
                     if any(isinstance(e, RangeNotSupportedError) for e in eg.exceptions):
                         if isResuming:
-                            # https://github.com/XiaoYouChR/Ghost-Downloader-3/issues/377
+                            # Handle redirect filename
                             logger.warning("续传的范围对不上，重新下载 {}", self.outputPath)
                             isResuming = False
                         else:

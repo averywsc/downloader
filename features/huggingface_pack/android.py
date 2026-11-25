@@ -1,4 +1,4 @@
-UI_CLASS = "com.xychr.ghostdownloader.features.huggingface_pack.HuggingFaceUi"
+UI_CLASS = "com.avery.dodown.features.huggingface_pack.HuggingFaceUi"
 
 
 def mirrorSiteList() -> list[str]:

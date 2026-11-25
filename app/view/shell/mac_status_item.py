@@ -132,7 +132,9 @@ class MacStatusItem:
         )
 
     def _buildMenuBarIcon(self) -> NSImage:
-        raw = QResource(":/image/logo_menubar_template.png").data()
+        from app.config.paths import EXECUTABLE_DIR
+        localTpl = EXECUTABLE_DIR / "app" / "assets" / "logo_menubar_template.png"
+        raw = localTpl.read_bytes() if localTpl.is_file() else QResource(":/image/logo_menubar_template.png").data()
         image = NSImage.alloc().initWithData_(NSData.dataWithBytes_length_(raw, len(raw)))
         size = image.size()
         image.setSize_((self.ICON_SIZE * size.width / size.height, self.ICON_SIZE))

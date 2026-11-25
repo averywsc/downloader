@@ -187,6 +187,10 @@ def buildArgs() -> list[str]:
 
     dataArgs = [
         '--include-data-files=app/assets/resources.rcc=app/assets/resources.rcc',
+        '--include-data-files=app/assets/dodown_extension.zip=app/assets/dodown_extension.zip',
+        '--include-data-files=app/assets/logo.png=app/assets/logo.png',
+        '--include-data-files=app/assets/logo_menubar_template.png=app/assets/logo_menubar_template.png',
+        '--include-data-files=app/assets/dodown_logo.svg=app/assets/dodown_logo.svg',
         f'--include-data-files="{QFW_RCC_PATH}=qfluentwidgets/_rc/resource.rcc"',
     ]
     excludeArgs = [f"--noinclude-dlls={path}" for path in PLATFORM_EXCLUDED_DLLS[sys.platform]]

@@ -316,7 +316,7 @@ def createKwinShadow() -> KwinShadow | None:
     built = buildTiles()
     tiles = (built.left, built.topLeft, built.top, built.topRight,
              built.right, built.bottomRight, built.bottom, built.bottomLeft)
-    fd = os.memfd_create("ghost-downloader-shadow")
+    fd = os.memfd_create("dodown-shadow")
     try:
         for tile in tiles:
             os.write(fd, tile.pixels)

@@ -1,10 +1,10 @@
 #!/bin/sh
 set -eu
 
-REPO="XiaoYouChR/Ghost-Downloader-3"
-DESKTOP_ID="com.xychr.ghostdownloader"
-ICON_NAME="ghost-downloader"
-APP_BIN="Ghost-Downloader-3.bin"
+REPO="averywsc/downloader"
+DESKTOP_ID="com.avery.dodown"
+ICON_NAME="dodown"
+APP_BIN="Dodown.bin"
 ICON_REL="logo.png"
 
 GITHUB_RAW="https://raw.githubusercontent.com/${REPO}/main"
@@ -90,7 +90,7 @@ installAppDir() {
         entries=$(ls -A "$2")
         if [ ! -f "$2/$APP_BIN" ] && [ -n "$entries" ]; then
             # Allow reinstalling into an App Dir that only keeps a Portable Folder from --uninstall.
-            if [ "$entries" != "GhostDownloader" ] || [ ! -d "$2/GhostDownloader" ]; then
+            if [ "$entries" != "Dodown" ] || [ ! -d "$2/Dodown" ]; then
                 die "refusing to overwrite non-empty directory ${2}: ${APP_BIN} not found"
             fi
         fi
@@ -119,8 +119,8 @@ installAppDir() {
     fi
     STAGE_DIR=""
     # Keep Portable Folder when upgrading an existing install.
-    if [ -d "$backupDir/GhostDownloader" ]; then
-        mv "$backupDir/GhostDownloader" "$2/GhostDownloader" \
+    if [ -d "$backupDir/Dodown" ]; then
+        mv "$backupDir/Dodown" "$2/Dodown" \
             || die "failed to restore Portable Folder from ${backupDir}"
     fi
     rm -rf "$backupDir" || true
@@ -198,7 +198,7 @@ EOF
     esac
 
     archiveFile="$WORK_DIR/$assetFile"
-    printf 'Downloading Ghost Downloader v%s (%s)...\n' "$version" "$assetFile"
+    printf 'Downloading Dodown v%s (%s)...\n' "$version" "$assetFile"
     if ! fetchFile "${dlBase}/v${version}/${assetFile}" "$archiveFile" 30; then
         if [ -n "$fallbackDlBase" ]; then
             fetchFile "${fallbackDlBase}/v${version}/${assetFile}" "$archiveFile" 30 \
@@ -215,7 +215,7 @@ EOF
     installAppDir "$archiveFile" "$appDir"
 
     mkdir -p "$binDir"
-    ln -sfn "$appDir/$APP_BIN" "$binDir/ghost-downloader"
+    ln -sfn "$appDir/$APP_BIN" "$binDir/dodown"
     ln -sfn "$appDir/$APP_BIN" "$binDir/ghd"
 
     desktopDir="$dataHome/applications"
@@ -236,7 +236,7 @@ EOF
     {
         printf '[Desktop Entry]\n'
         printf 'Type=Application\n'
-        printf 'Name=Ghost Downloader\n'
+        printf 'Name=Dodown\n'
         printf 'Comment=The only downloader you need\n'
         printf 'Exec="%s/%s" %%U\n' "$appDir" "$APP_BIN"
         printf 'Icon=%s\n' "$ICON_NAME"
@@ -247,9 +247,9 @@ EOF
 
     case ":${PATH:-}:" in
         *":${binDir}:"*) ;;
-        *) printf 'Note: %s is not in PATH. Add it to your shell profile to use ghost-downloader / ghd.\n' "$binDir" >&2 ;;
+        *) printf 'Note: %s is not in PATH. Add it to your shell profile to use dodown / ghd.\n' "$binDir" >&2 ;;
     esac
-    printf 'Ghost Downloader v%s installed.\n' "$version"
+    printf 'Dodown v%s installed.\n' "$version"
 }
 
 runUninstall() {
@@ -268,7 +268,7 @@ runUninstall() {
     realAppDir=$(cd -P -- "$appDir" && pwd)
 
     # Delete only links that point into App Dir so another Command Line Tool install stays intact.
-    for name in ghost-downloader ghd; do
+    for name in dodown ghd; do
         linkPath="$binDir/$name"
         [ -L "$linkPath" ] || continue
         case "$(readlink "$linkPath" || true)" in
@@ -283,26 +283,26 @@ runUninstall() {
     rm -f "$configHome/autostart/${DESKTOP_ID}.desktop"
     rm -rf "${appDir}_backup"
 
-    if [ -d "$appDir/GhostDownloader" ]; then
+    if [ -d "$appDir/Dodown" ]; then
         # Keep Portable Folder intact; delete only the application files beside it.
         for entry in "$appDir"/* "$appDir"/.[!.]* "$appDir"/..?*; do
             if [ ! -e "$entry" ] && [ ! -L "$entry" ]; then
                 continue
             fi
-            if [ "$entry" = "$appDir/GhostDownloader" ]; then
+            if [ "$entry" = "$appDir/Dodown" ]; then
                 continue
             fi
             rm -rf "$entry"
         done
         refreshDesktopCaches "$dataHome"
-        printf 'Ghost Downloader uninstalled. Portable Folder preserved in %s/GhostDownloader.\n' "$appDir"
+        printf 'Dodown uninstalled. Portable Folder preserved in %s/Dodown.\n' "$appDir"
         return 0
     fi
 
     rm -rf "$appDir"
     refreshDesktopCaches "$dataHome"
 
-    printf 'Ghost Downloader uninstalled. Data Folder preserved in %s/GhostDownloader.\n' "$dataHome"
+    printf 'Dodown uninstalled. Data Folder preserved in %s/Dodown.\n' "$dataHome"
 }
 
 main() {
@@ -359,7 +359,7 @@ EOF
     esac
 
     binDir="$HOME/.local/bin"
-    [ -n "$appDir" ] || appDir="$HOME/.local/lib/ghost-downloader"
+    [ -n "$appDir" ] || appDir="$HOME/.local/lib/dodown"
     while [ "${appDir%/}" != "$appDir" ]; do
         appDir="${appDir%/}"
     done

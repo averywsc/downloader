@@ -32,7 +32,9 @@ def setupDock(speedMeter, taskService) -> None:
         nonlocal baseIcon, container, imageView, progressBar
 
         if baseIcon is None:
-            baseIcon = QPixmap(":/image/logo_macOS.png").scaled(
+            from app.config.paths import EXECUTABLE_DIR
+            localLogo = EXECUTABLE_DIR / "app" / "assets" / "logo_macOS.png"
+            baseIcon = QPixmap(str(localLogo) if localLogo.is_file() else ":/image/logo_macOS.png").scaled(
                 256, 256,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,

@@ -223,10 +223,13 @@ class MainWindow(MSFluentWindow):
         return QRect(0, 10, 75, size.height())
 
     def _normalBackgroundColor(self):
+        p = currentPalette()
         if sys.platform == "darwin" and cfg.backgroundEffect.value != "None":
-            return QColor(5, 12, 31, 180)
+            c = QColor(p.bg)
+            c.setAlpha(180)
+            return c
         if self.styleSheet() == "":
-            return QColor(TOTONE_BG)
+            return QColor(p.bg)
         return QColor(0, 0, 0, 0)
 
     def _showPage(self, routeKey: str, createPage: Callable[[], QWidget]) -> None:

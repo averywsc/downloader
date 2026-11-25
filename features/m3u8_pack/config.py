@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from PySide6.QtWidgets import QWidget
     from app.view.components.setting_card_group import CollapsibleSettingCardGroup
 
-M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE", mirrors={"gitcode": "XiaoYouChR/N_m3u8DL-RE-mirror"})
+M3U8_REPO = Repo("nilaoda/N_m3u8DL-RE")
 
 
 class M3U8Config(PackConfig):

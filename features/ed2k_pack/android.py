@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from .task import ED2kTask
     from app.config.cfg import ConfigItem
 
-UI_CLASS = "com.xychr.ghostdownloader.features.ed2k_pack.Ed2kUi"
+UI_CLASS = "com.avery.dodown.features.ed2k_pack.Ed2kUi"
 
 
 def init(pack: ED2kPack) -> dict[str, Signal]:

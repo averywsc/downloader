@@ -14,10 +14,14 @@ from qfluentwidgets import (
 from app.format import toReadableSize
 
 
-class GhostIcon(FluentIconBase, Enum):
-    GHOST = "ghost"
+class DodownIcon(FluentIconBase, Enum):
+    DODOWN = "dodown"
 
     def path(self, theme=Theme.AUTO) -> str:
+        from app.config.paths import EXECUTABLE_DIR
+        local = EXECUTABLE_DIR / "app" / "assets" / "logo_menubar_template.png"
+        if local.is_file():
+            return str(local)
         return ":/image/logo_menubar_template.png"
 
     def _toTintedPixmap(self, theme: Theme) -> QPixmap:
@@ -160,10 +164,19 @@ if sys.platform == "win32":
             self.move(toAvailablePosition(self.pos(), self.size(), getCurrentScreenGeometry()))
 
         def showEvent(self, event):
+            from app.view.totone_theme import currentPalette
+            p = currentPalette()
+            self.view.setStyleSheet(
+                f"MenuActionListWidget {{ background-color: {p.panel}; border: 1px solid {p.edge}; "
+                f"border-radius: 5px; padding: 4px; color: {p.ink}; }}"
+                f"MenuActionListWidget::item {{ color: {p.ink}; border-radius: 3px; padding: 4px 8px; }}"
+                f"MenuActionListWidget::item:hover, MenuActionListWidget::item:selected {{ "
+                f"background-color: {p.line}; color: {p.ink}; }}"
+            )
             self.adjustPosition()
             super().showEvent(event)
 
-    TrayMenu = AcrylicMenu if isGreaterEqualWin11() else TrayRoundMenu
+    TrayMenu = TrayRoundMenu
 else:
     TrayMenu = RoundMenu
 
@@ -179,7 +192,7 @@ class SystemTrayIcon(QSystemTrayIcon):
         self.setToolTip(self.NAME)
 
         self._menu = TrayMenu()
-        self._menu.addAction(Action(GhostIcon.GHOST, self.tr('Dashboard'), self._menu,
+        self._menu.addAction(Action(DodownIcon.DODOWN, self.tr('Dashboard'), self._menu,
                                     triggered=lambda: self._show().showTasks()))
         self._menu.addAction(Action(FluentIcon.ADD, self.tr('New Task'), self._menu,
                                     triggered=lambda: self._show().addUrls([])))

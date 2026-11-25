@@ -18,8 +18,7 @@ from app.i18n import toLanguageText, toLocalizedError
 from app.models.task import toTaskError
 from app.services.port_listener import ListenStatus
 from app.config.constants import (
-    AUTHOR, AUTHOR_URL, CHROME_WEBSTORE_URL, EDGE_ADDONS_URL,
-    FEEDBACK_URL, FIREFOX_ADDONS_URL, VERSION, YEAR,
+    AUTHOR, AUTHOR_URL, FEEDBACK_URL, VERSION, YEAR,
 )
 from app.view.components.category_settings import CategoryRulesCard
 from app.view.components.setting_card_group import (
@@ -164,30 +163,15 @@ class SettingPage(QWidget):
 
         self.chromiumInstallCard = PrimaryPushSettingCard(
             self.tr('Install'), FluentIcon.DOWNLOAD,
-            self.tr('Install to Chromium Browser'),
-            self.tr('Unpack extension and display installation guide (Chrome/Brave etc.); extension updates automatically with the desktop client'),
+            self.tr('Install Dodown Browser Extension'),
+            self.tr('Unpack Dodown\'s custom Manifest V3 extension and show the step-by-step install guide (Chrome / Edge / Brave / Arc)'),
         )
         self.exportExtensionButton = HyperlinkButton(self.chromiumInstallCard)
-        self.exportExtensionButton.setText(self.tr('Export CRX File'))
+        self.exportExtensionButton.setText(self.tr('Export Extension (.zip)'))
         addCardWidget(
             self.chromiumInstallCard, self.exportExtensionButton,
             before=self.chromiumInstallCard.button, spacing=16,
         )
-
-        self.storeInstallCard = HyperlinkCard(
-            FIREFOX_ADDONS_URL, self.tr('Firefox Store'), FluentIcon.GLOBE,
-            self.tr('Install Extension From Web Stores'),
-            self.tr('Store version updates may be delayed due to the review process'),
-        )
-        edgeBtn = HyperlinkButton(self.storeInstallCard)
-        edgeBtn.setText(self.tr('Edge Store'))
-        edgeBtn.setUrl(EDGE_ADDONS_URL)
-        addCardWidget(self.storeInstallCard, edgeBtn, before=self.storeInstallCard.linkButton, spacing=16)
-
-        chromeBtn = HyperlinkButton(self.storeInstallCard)
-        chromeBtn.setText(self.tr('Chrome Store'))
-        chromeBtn.setUrl(CHROME_WEBSTORE_URL)
-        addCardWidget(self.storeInstallCard, chromeBtn, before=edgeBtn, spacing=16)
 
         self.browserPairTokenCard = PrimaryPushSettingCard(
             self.tr('Copy'), FluentIcon.COPY, self.tr('Pairing Token'),
@@ -224,7 +208,6 @@ class SettingPage(QWidget):
                               self.tr('Enter draft mode when automatically intercepting browser downloads to adjust download path and file name'),
                               cfg.shouldDraftTakenDownload),
             self.chromiumInstallCard,
-            self.storeInstallCard,
             self.browserPairTokenCard,
             self.browserAutoPortCard,
             self.browserPortCard,
@@ -535,8 +518,8 @@ class SettingPage(QWidget):
         from PySide6.QtCore import QFile, QIODevice
         from PySide6.QtWidgets import QFileDialog
         from app.platform.desktop import loadCrx
-        path, _ = QFileDialog.getSaveFileName(self, self.tr('Select Export Path'),
-                                              "./Extension.crx", "Chromium Extension(*.crx)")
+        path, _ = QFileDialog.getSaveFileName(self, self.tr('Export Dodown Browser Extension'),
+                                              "./Dodown-Extension.zip", "Dodown Extension (*.zip)")
         if path:
             f = QFile(path)
             if f.open(QIODevice.OpenModeFlag.WriteOnly):

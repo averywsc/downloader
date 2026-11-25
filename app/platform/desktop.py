@@ -114,7 +114,11 @@ def deleteRecoverably(path: Path) -> bool:
 
 
 def loadCrx() -> bytes:
-    return bytes(QResource(":/res/chrome_extension.crx").data())
+    from app.config.paths import EXECUTABLE_DIR
+    zipPath = EXECUTABLE_DIR / "app" / "assets" / "dodown_extension.zip"
+    if zipPath.is_file():
+        return zipPath.read_bytes()
+    return bytes(QResource(":/res/dodown_extension.zip").data())
 
 
 def openFile(path: str | bytes | PathLike[str]) -> None:

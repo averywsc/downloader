@@ -37,7 +37,9 @@ jobs:
 
       - name: Build Dodown.exe with Nuitka
         shell: pwsh
-        run: uv run python scripts/deploy.py
+        run: |
+          uv run pyside6-rcc app/assets/resources.qrc -o app/assets/resources.rcc
+          uv run python scripts/deploy.py
 
       - name: Package Portable ZIP
         shell: pwsh
@@ -75,7 +77,9 @@ jobs:
           uv sync
 
       - name: Build Dodown.app with Nuitka
-        run: uv run python scripts/deploy.py
+        run: |
+          uv run pyside6-rcc app/assets/resources.qrc -o app/assets/resources.rcc
+          uv run python scripts/deploy.py
 
       - name: Package macOS ZIP
         run: |
@@ -109,7 +113,9 @@ jobs:
           uv sync
 
       - name: Build Dodown with Nuitka
-        run: uv run python scripts/deploy.py
+        run: |
+          uv run pyside6-rcc app/assets/resources.qrc -o app/assets/resources.rcc
+          uv run python scripts/deploy.py
 
       - name: Package Linux tar.gz
         run: |

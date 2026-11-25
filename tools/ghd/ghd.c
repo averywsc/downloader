@@ -5,7 +5,7 @@
 #define COMMAND_LINE_MAX 32768
 
 static const char UNAVAILABLE[] =
-    "{\"error\": {\"code\": \"instanceUnavailable\", \"message\": \"Cannot start Ghost-Downloader-3.exe next to the bin folder.\"}}\n";
+    "{\"error\": {\"code\": \"instanceUnavailable\", \"message\": \"Cannot start Dodown.exe next to the bin folder.\"}}\n";
 
 static const wchar_t *skipProgram(const wchar_t *commandLine) {
     if (*commandLine == L'"') {
@@ -23,7 +23,7 @@ int wmain(void) {
     DWORD length = GetModuleFileNameW(NULL, program, MAX_PATH);
     if (length == 0 || length == MAX_PATH) return 1;
     for (int i = 0; i < 2; i++) *wcsrchr(program, L'\\') = L'\0';
-    wcscat_s(program, MAX_PATH, L"\\Ghost-Downloader-3.exe");
+    wcscat_s(program, MAX_PATH, L"\\Dodown.exe");
 
     static wchar_t commandLine[COMMAND_LINE_MAX];
     if (_snwprintf_s(commandLine, COMMAND_LINE_MAX, _TRUNCATE, L"\"%ls\" ghd %ls", program,

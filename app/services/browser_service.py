@@ -206,10 +206,15 @@ class BrowserService:
 
     async def install(self) -> Path:
         def unpack() -> Path:
-            crx = self._loadCrx()
-            headerSize = struct.unpack_from("<I", crx, 8)[0]
+            data = self._loadCrx()
             self._extensionFolder.mkdir(parents=True, exist_ok=True)
-            with zipfile.ZipFile(BytesIO(crx[12 + headerSize:])) as zf:
+            # Support both standard .zip (Dodown custom extension) and legacy CRX format
+            if data[:2] == b"PK":
+                payload = data
+            else:
+                headerSize = struct.unpack_from("<I", data, 8)[0]
+                payload = data[12 + headerSize:]
+            with zipfile.ZipFile(BytesIO(payload)) as zf:
                 zf.extractall(self._extensionFolder)
             return self._extensionFolder
 

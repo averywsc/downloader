@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 __all__ = ["UI_CLASS", "draftFields", "editFields", "setTrim"]
 
-UI_CLASS = "com.xychr.ghostdownloader.features.ffmpeg_pack.FFmpegUi"
+UI_CLASS = "com.avery.dodown.features.ffmpeg_pack.FFmpegUi"
 
 
 def draftFields(task: FFmpegTask) -> dict[str, Any]:
