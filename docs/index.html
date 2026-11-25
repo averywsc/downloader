@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dodown — Download</title>
-  <meta name="description" content="Download Dodown — a fast, multi-protocol desktop download manager with the Totone Studio UI.">
+  <meta name="description" content="Download Dodown — a fast, multi-protocol desktop download manager for Windows, macOS, and Linux.">
   <meta name="theme-color" content="#050c1f">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050c1f'/%3E%3Crect x='1.5' y='1.5' width='61' height='61' rx='12.5' fill='none' stroke='%2334477e' stroke-width='2'/%3E%3Cpath d='M17 15h15.5c10.2 0 17.5 6.8 17.5 17s-7.3 17-17.5 17H17V15zm10 9v16h5.2c4.9 0 8-3.1 8-8s-3.1-8-8-8H27z' fill='%23ffffff'/%3E%3C/svg%3E">
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&display=swap" rel="stylesheet">
@@ -25,7 +25,7 @@
     body {
       background: var(--bg);
       color: var(--ink);
-      font: 400 15px/1.5 "Archivo", "Helvetica Neue", Arial, sans-serif;
+      font: 400 15px/1.55 "Archivo", "Helvetica Neue", Arial, sans-serif;
       display: flex;
       flex-direction: column;
     }
@@ -44,91 +44,78 @@
       text-decoration: none;
       color: var(--ink);
     }
-    .brand svg { width: 28px; height: 28px; flex: none; }
-    .brand strong {
-      font-size: 22px;
-      font-weight: 800;
-      font-stretch: 75%;
-      letter-spacing: -0.02em;
-    }
+    .brand svg { width: 26px; height: 26px; flex: none; }
+    .brand strong { font-size: 21px; font-weight: 800; font-stretch: 75%; letter-spacing: -0.02em; }
     .sp { flex: 1; }
-    nav { display: flex; align-items: center; gap: 8px; }
-    .nav-link {
+    header a.link {
       color: var(--mute);
       text-decoration: none;
       font-size: 13px;
       padding: 5px 10px;
       border-radius: 3px;
-      border: 1px solid transparent;
     }
-    .nav-link:hover { color: var(--ink); background: var(--line); border-color: var(--edge); }
-    .donate {
-      color: #fde68a;
-      border: 1px solid rgba(245, 158, 11, 0.38);
-      background: rgba(245, 158, 11, 0.09);
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .donate:hover { background: rgba(245, 158, 11, 0.22); border-color: #fbbf24; }
+    header a.link:hover { color: var(--ink); background: var(--line); }
 
     main {
       flex: 1;
       width: 100%;
-      max-width: 860px;
+      max-width: 640px;
       margin: 0 auto;
-      padding: 56px 24px 48px;
-    }
-    .hero { text-align: center; margin-bottom: 44px; }
-    .pill {
-      display: inline-block;
-      font-size: 12px;
-      color: var(--mute);
-      background: var(--panel);
-      border: 1px solid var(--edge);
-      border-radius: 999px;
-      padding: 3px 12px;
-      margin-bottom: 16px;
-      font-variant-numeric: tabular-nums;
+      padding: 64px 24px 48px;
     }
     h1 {
-      font-size: clamp(34px, 6vw, 52px);
+      font-size: clamp(32px, 6vw, 44px);
       font-weight: 800;
       font-stretch: 75%;
       letter-spacing: -0.03em;
       line-height: 1.05;
-      margin: 0 0 14px;
+      margin: 0 0 12px;
     }
-    .lead {
+    .ver {
+      font-size: 12.5px;
       color: var(--mute);
-      max-width: 56ch;
-      margin: 0 auto 28px;
-      font-size: 16px;
+      margin-bottom: 18px;
     }
-    .cta-row {
+    .about {
+      color: var(--mute);
+      margin: 0 0 32px;
+      font-size: 15px;
+    }
+    .about strong { color: var(--ink); }
+
+    .downloads {
       display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 10px;
     }
+    .dl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 14px 16px;
+    }
+    .dl-row.rec { border-color: var(--edge); }
+    .dl-info strong { display: block; font-size: 15px; }
+    .dl-info span { font-size: 12.5px; color: var(--mute); }
+    .dl-btns { display: flex; gap: 8px; flex-wrap: wrap; }
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 11px 20px;
+      padding: 9px 15px;
       border-radius: 4px;
-      font: 600 14px/1 "Archivo", sans-serif;
+      font: 600 13px/1 "Archivo", sans-serif;
       text-decoration: none;
       color: var(--ink);
-      background: var(--panel);
+      background: var(--bg);
       border: 1px solid var(--edge);
-      transition: background-color .12s, border-color .12s, transform .08s;
+      white-space: nowrap;
     }
     .btn:hover { background: var(--line); border-color: var(--acc); }
-    .btn:active { transform: translateY(1px); }
     .btn.pri {
       background: var(--acc);
       border-color: var(--acc);
@@ -136,63 +123,14 @@
       font-weight: 700;
     }
     .btn.pri:hover { background: #dbe4ff; border-color: #dbe4ff; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 36px;
+    @media (max-width: 560px) {
+      .dl-row { flex-direction: column; align-items: stretch; }
+      .dl-btns .btn { flex: 1; }
     }
-    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 5px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .card.rec { border-color: var(--edge); }
-    .card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-    .card h2 { font-size: 16px; font-weight: 700; margin: 0; }
-    .tag {
-      font-size: 11px;
-      color: var(--mute);
-      border: 1px solid var(--line);
-      border-radius: 3px;
-      padding: 2px 6px;
-    }
-    .card.rec .tag { color: var(--accink); background: var(--acc); border-color: var(--acc); font-weight: 700; }
-    .card p { margin: 0; font-size: 13px; color: var(--mute); flex: 1; }
-    .card .actions { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
-    .card .btn { width: 100%; padding: 9px 12px; font-size: 13px; }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      border-top: 1px solid var(--line);
-      padding-top: 28px;
-    }
-    @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
-    .feat {
-      background: rgba(9, 21, 52, 0.55);
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      padding: 12px 14px;
-    }
-    .feat strong { display: block; font-size: 13.5px; margin-bottom: 3px; }
-    .feat span { font-size: 12.5px; color: var(--mute); }
 
     footer {
       text-align: center;
-      padding: 18px 24px;
+      padding: 16px 24px;
       border-top: 1px solid var(--line);
       background: var(--panel);
       font-size: 12.5px;
@@ -213,98 +151,61 @@
       <strong>Dodown</strong>
     </a>
     <span class="sp"></span>
-    <nav>
-      <a class="nav-link" href="https://github.com/averywsc/downloader" target="_blank" rel="noopener">GitHub</a>
-      <a class="nav-link" href="https://averybeuth.xyz" target="_blank" rel="noopener">averybeuth.xyz</a>
-      <a class="donate" href="https://buymeacoffee.com/averyuwubaka" target="_blank" rel="noopener">♥ Donate</a>
-    </nav>
+    <a class="link" href="https://github.com/averywsc/downloader" target="_blank" rel="noopener">GitHub</a>
+    <a class="link" href="https://averybeuth.xyz" target="_blank" rel="noopener">averybeuth.xyz</a>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="pill" id="version-pill">Latest Release · Free &amp; Open Source</div>
-      <h1>Download Dodown</h1>
-      <p class="lead">
-        A fast, multi-protocol desktop download manager with the Totone Studio UI — HTTP, BitTorrent, yt-dlp Media Studio, M3U8, FTP, GitHub, HuggingFace, and arXiv.
-      </p>
-      <div class="cta-row">
-        <a class="btn pri" id="primary-dl" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-Setup.exe">Download for Windows</a>
-        <a class="btn" href="https://github.com/averywsc/downloader/releases/latest" target="_blank" rel="noopener">All Releases</a>
-      </div>
-    </section>
+    <h1>Download Dodown</h1>
+    <div class="ver" id="ver">v4.5.11 · Free &amp; Open Source</div>
+    <p class="about">
+      <strong>Dodown</strong> is a desktop download manager that splits files into multiple concurrent connections to download faster and more reliably. Paste links, drop <code>.torrent</code> or <code>.m3u8</code> files, or connect the built-in browser extension to automatically catch downloads from HTTP/HTTPS, BitTorrent, YouTube &amp; media sites (<code>yt-dlp</code>), FTP, GitHub, HuggingFace, and arXiv.
+    </p>
 
-    <section class="grid">
-      <article class="card" id="card-win">
-        <div class="card-head">
-          <h2>Windows</h2>
-          <span class="tag" id="tag-win">x64</span>
+    <section class="downloads">
+      <div class="dl-row" id="row-win">
+        <div class="dl-info">
+          <strong>Windows (x64)</strong>
+          <span>Windows 10 &amp; 11 · Installer or Portable ZIP</span>
         </div>
-        <p>Windows 10 &amp; 11 standalone installer or portable ZIP with no Python setup required.</p>
-        <div class="actions">
-          <a class="btn pri" id="dl-win-setup" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-Setup.exe">Download Installer (.exe)</a>
-          <a class="btn" id="dl-win-zip" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-x64-Portable.zip">Download Portable (.zip)</a>
+        <div class="dl-btns">
+          <a class="btn pri" id="dl-win-setup" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-Setup.exe">Installer (.exe)</a>
+          <a class="btn" id="dl-win-zip" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Windows-x64-Portable.zip">Portable (.zip)</a>
         </div>
-      </article>
-
-      <article class="card" id="card-mac">
-        <div class="card-head">
-          <h2>macOS</h2>
-          <span class="tag" id="tag-mac">Apple Silicon</span>
-        </div>
-        <p>Native macOS 13+ app bundle (.app) packaged in a clean ZIP archive.</p>
-        <div class="actions">
-          <a class="btn pri" id="dl-mac" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-macOS-arm64.zip">Download for macOS (.zip)</a>
-        </div>
-      </article>
-
-      <article class="card" id="card-linux">
-        <div class="card-head">
-          <h2>Linux</h2>
-          <span class="tag" id="tag-linux">x64</span>
-        </div>
-        <p>Standalone Linux x86_64 archive ready to extract and run.</p>
-        <div class="actions">
-          <a class="btn pri" id="dl-linux" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Linux-x64.tar.gz">Download for Linux (.tar.gz)</a>
-        </div>
-      </article>
-    </section>
-
-    <section class="features">
-      <div class="feat">
-        <strong>Totone Studio UI &amp; 8 Themes</strong>
-        <span>Deep navy chrome, live speed sparkline, Floating Drop Pill, and Ctrl+K Command Palette.</span>
       </div>
-      <div class="feat">
-        <strong>Media &amp; Playlist Studio</strong>
-        <span>One-click MP4, MP3, FLAC, and Studio WAV presets with timestamp clipping and batch playlists.</span>
+
+      <div class="dl-row" id="row-mac">
+        <div class="dl-info">
+          <strong>macOS (Apple Silicon)</strong>
+          <span>macOS 13+ · Standalone .app bundle</span>
+        </div>
+        <div class="dl-btns">
+          <a class="btn pri" id="dl-mac" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-macOS-arm64.zip">Download (.zip)</a>
+        </div>
       </div>
-      <div class="feat">
-        <strong>Custom Browser Extension</strong>
-        <span>Built-in Manifest V3 Dodown extension — unpack directly from Settings with zero store accounts.</span>
-      </div>
-      <div class="feat">
-        <strong>Smart Automation</strong>
-        <span>Auto-extract archives, FFmpeg auto-convert, domain routing rules, Quiet Hours, and hash/VirusTotal checks.</span>
+
+      <div class="dl-row" id="row-linux">
+        <div class="dl-info">
+          <strong>Linux (x64)</strong>
+          <span>Standalone tar.gz archive</span>
+        </div>
+        <div class="dl-btns">
+          <a class="btn pri" id="dl-linux" href="https://github.com/averywsc/downloader/releases/latest/download/Dodown-v4.5.11-Linux-x64.tar.gz">Download (.tar.gz)</a>
+        </div>
       </div>
     </section>
   </main>
 
   <footer>
-    Part of the Totone / Bebeat / Fifilm suite · <a href="https://averybeuth.xyz" target="_blank" rel="noopener">averybeuth.xyz</a> · <a href="https://github.com/averywsc/downloader" target="_blank" rel="noopener">Source on GitHub</a>
+    <a href="https://averybeuth.xyz" target="_blank" rel="noopener">averybeuth.xyz</a> · <a href="https://github.com/averywsc/downloader/releases" target="_blank" rel="noopener">All Releases</a>
   </footer>
 
   <script>
     (async () => {
       const ua = navigator.userAgent.toLowerCase();
       const os = ua.includes("win") ? "win" : ua.includes("mac") ? "mac" : ua.includes("linux") ? "linux" : "win";
-      const recCard = document.getElementById(`card-${os}`);
-      const recTag = document.getElementById(`tag-${os}`);
-      if (recCard) recCard.classList.add("rec");
-      if (recTag) recTag.textContent = "Recommended";
-
-      const primaryBtn = document.getElementById("primary-dl");
-      const labels = { win: "Download for Windows", mac: "Download for macOS", linux: "Download for Linux" };
-      primaryBtn.textContent = labels[os] || "Download Latest";
+      const row = document.getElementById(`row-${os}`);
+      if (row) row.classList.add("rec");
 
       try {
         const res = await fetch("https://api.github.com/repos/averywsc/downloader/releases/latest");
@@ -312,7 +213,7 @@
         const rel = await res.json();
         const assets = rel.assets || [];
         if (rel.tag_name) {
-          document.getElementById("version-pill").textContent = `${rel.tag_name} · Free & Open Source`;
+          document.getElementById("ver").textContent = `${rel.tag_name} · Free & Open Source`;
         }
         const find = (re) => (assets.find(a => re.test(a.name)) || {}).browser_download_url;
         const winSetup = find(/Windows-Setup\.exe$/i);
@@ -324,9 +225,6 @@
         if (winZip) document.getElementById("dl-win-zip").href = winZip;
         if (macZip) document.getElementById("dl-mac").href = macZip;
         if (linuxTar) document.getElementById("dl-linux").href = linuxTar;
-
-        const best = os === "win" ? (winSetup || winZip) : os === "mac" ? macZip : linuxTar;
-        if (best) primaryBtn.href = best;
       } catch {}
     })();
   </script>
