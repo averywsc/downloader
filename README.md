@@ -2,7 +2,7 @@
 
 A multi-protocol desktop download manager that splits files into concurrent connections and dynamically redistributes threads to saturate your bandwidth.
 
-**Download page:** [averywsc.github.io/downloader](https://averywsc.github.io/downloader/) · **Website:** [averybeuth.xyz](https://averybeuth.xyz)
+**Download page:** [averywsc.github.io/downloader](https://averywsc.github.io/downloader/) · **Portfolio:** [averybeuth.xyz](https://averybeuth.xyz)
 
 ## Downloads
 
@@ -28,9 +28,5 @@ cd downloader
 uv sync
 uv run python Dodown.py
 ```
-
-## Inspiration
-
-Dodown takes inspiration from [Ghost Downloader](https://github.com/XiaoYouChR/Ghost-Downloader-3) and is powered by open-source tools including PySide6, `libtorrent`, `wreq`, `aioftp`, `yt-dlp`, and `FFmpeg`.
 
 [averybeuth.xyz](https://averybeuth.xyz) · [buymeacoffee.com/averyuwubaka](https://buymeacoffee.com/averyuwubaka)

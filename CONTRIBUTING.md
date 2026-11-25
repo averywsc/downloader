@@ -31,5 +31,5 @@ Thanks for your interest in contributing to **Dodown**!
 
 ## Links
 
-- Website: [averybeuth.xyz](https://averybeuth.xyz)
+- Portfolio: [averybeuth.xyz](https://averybeuth.xyz)
 - Issues: [github.com/averywsc/downloader/issues](https://github.com/averywsc/downloader/issues)
