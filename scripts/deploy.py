@@ -163,7 +163,7 @@ def findIncludes() -> tuple[list[str], list[str]]:
     packages = ((featurePackages - appPackages - internalPackages) | set(EXTRA_INCLUDE_PACKAGES)) - {"qfluentwidgets"}
     packages |= set(PLATFORM_INCLUDE_PACKAGES.get(sys.platform, []))
 
-    qfwModules = findQfwModules([REPO / "Ghost-Downloader-3.py", *appFiles, *featureFiles], PACKAGE_EXPORTS)
+    qfwModules = findQfwModules([REPO / "Dodown.py", *appFiles, *featureFiles], PACKAGE_EXPORTS)
     modules = {
         module
         for module in featureModules - appModules
